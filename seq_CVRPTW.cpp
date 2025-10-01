@@ -260,6 +260,7 @@ PrimsAlgo(const VRP &vrp, std::vector<std::vector<Edge>> &graph) {
     }
   }
 
+
   //! std::vector < std::pair<int,int>> edges; // not used
   node_t u = 0;
   for (auto v : toEdges) {  // nice parallel code or made to parallel
@@ -771,6 +772,7 @@ int main(int argc, char *argv[]) {
     visited[0] = true;
 
     ShortCircutTour(mstG, visited, 0, singleRoute);  //a DFS
+    
     DEBUG std::cout << '\n';
 
     auto aRoutes = convertToVrpRoutes(vrp, singleRoute);
