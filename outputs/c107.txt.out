@@ -1,0 +1,40 @@
+filename: C107
+Vehicles: 25, Capacity: 200
+Total customers : 101
+No of routes: 35
+Route #1: 67 65 63 62 74 61 64 68
+Route #2: 55 54 53 56 58 60
+Route #3: 57 59
+Route #4: 40
+Route #5: 41
+Route #6: 43 42 44 45 48 50
+Route #7: 51
+Route #8: 47 46 49
+Route #9: 52
+Route #10: 72 66 69
+Route #11: 20 21
+Route #12: 22
+Route #13: 25 27 29 34
+Route #14: 32 33 31 35 36
+Route #15: 39
+Route #16: 38
+Route #17: 37
+Route #18: 24 23
+Route #19: 10 11
+Route #20: 8 9 6 4 1
+Route #21: 2
+Route #22: 98 96 95 94 93
+Route #23: 92 97 100 99 91
+Route #24: 89
+Route #25: 90 87 86 88
+Route #26: 85
+Route #27: 84
+Route #28: 83 82
+Route #29: 81 78 76 71 70 73 77 79 80
+Route #30: 5 3 75
+Route #31: 7
+Route #32: 13 17 18 19 15 16 14 12
+Route #33: 26
+Route #34: 28
+Route #35: 30
+Cost 2037

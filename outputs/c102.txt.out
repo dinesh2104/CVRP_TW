@@ -1,0 +1,32 @@
+filename: C102
+Vehicles: 25, Capacity: 200
+Total customers : 101
+No of routes: 27
+Route #1: 20 22 21
+Route #2: 25
+Route #3: 24 27 29 34 36
+Route #4: 39
+Route #5: 38 37
+Route #6: 33
+Route #7: 32 35 31 26 23
+Route #8: 28
+Route #9: 30
+Route #10: 10 11
+Route #11: 13 17 18 19 15 16 14 12
+Route #12: 8 9 6 4 7 3 5 75
+Route #13: 1 2 98 91 89
+Route #14: 87 86 85 88
+Route #15: 84 82 83
+Route #16: 81 78 76 71 70 73 77 79 80
+Route #17: 90 94 93 95 96
+Route #18: 92 97 100 99
+Route #19: 67 65 63 62 61 64 68
+Route #20: 40
+Route #21: 41
+Route #22: 42 44 45
+Route #23: 46 47
+Route #24: 49 52
+Route #25: 48 51 50
+Route #26: 43 55 54 53 56 58 60
+Route #27: 59 57 72 74 66 69
+Cost 1734

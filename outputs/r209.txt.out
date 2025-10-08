@@ -1,0 +1,21 @@
+filename: R209
+Vehicles: 25, Capacity: 1000
+Total customers : 101
+No of routes: 16
+Route #1: 27 28 53 58 13 94
+Route #2: 95 97 92
+Route #3: 59 99 5 60
+Route #4: 18
+Route #5: 52 83 8 82 7 88 62 10 90 32
+Route #6: 19 11 63 31 70 30 20 66 48
+Route #7: 47 64 49 36 46 45 17 84 93 96
+Route #8: 85 61 16 86 44 38 14 91 37
+Route #9: 98 100 87
+Route #10: 2 57 15 43 42 6 89
+Route #11: 40 21 73 72 74
+Route #12: 4 39 67 23 75 56 22 41 26
+Route #13: 12 80 68 77 3 79 78 34 33
+Route #14: 81 9 51
+Route #15: 71 65 35 76 50 1
+Route #16: 69 29 24 25 55 54
+Cost 1339

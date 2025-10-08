@@ -1,0 +1,33 @@
+filename: R109
+Vehicles: 25, Capacity: 200
+Total customers : 101
+No of routes: 28
+Route #1: 27 28 53 58
+Route #2: 40 26
+Route #3: 12 80 68 77
+Route #4: 3 79 78 34
+Route #5: 33 81 9 51
+Route #6: 71 65 35
+Route #7: 76 50 1
+Route #8: 69 29 24 54 55 25
+Route #9: 21 73 72 74
+Route #10: 75 56 4
+Route #11: 39 67 23 22 41 13
+Route #12: 94
+Route #13: 95 97
+Route #14: 92 59 99 5 84 17 60
+Route #15: 18
+Route #16: 52 83 45 46 8
+Route #17: 82 7 88
+Route #18: 31 70
+Route #19: 30 20 66
+Route #20: 19 11 62 10 90 32
+Route #21: 63 48
+Route #22: 47 36 49
+Route #23: 64 93 96
+Route #24: 85 16 86 61
+Route #25: 14 38 44 91 100 37
+Route #26: 98 87
+Route #27: 2 42 57 15 43
+Route #28: 6 89
+Cost 1850

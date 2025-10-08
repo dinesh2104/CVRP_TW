@@ -1,0 +1,44 @@
+filename: C201
+Vehicles: 25, Capacity: 700
+Total customers : 101
+No of routes: 39
+Route #1: 93 5 75 2 1 99 100 97 95
+Route #2: 94
+Route #3: 7 92 98 3 4 89 91 88 86 87
+Route #4: 77
+Route #5: 78
+Route #6: 85 81
+Route #7: 76 71 70 73 79
+Route #8: 80 96
+Route #9: 74
+Route #10: 62 61 64
+Route #11: 72 66 69 68 65 49 41
+Route #12: 42
+Route #13: 45 50 52
+Route #14: 51
+Route #15: 46
+Route #16: 44
+Route #17: 40
+Route #18: 57
+Route #19: 55 54 59
+Route #20: 58 60
+Route #21: 56
+Route #22: 53 43
+Route #23: 47 48
+Route #24: 67 63 84 83 82 90
+Route #25: 10 8 21
+Route #26: 20 22 24 27 30 29 6 32 31 35
+Route #27: 33 34
+Route #28: 36
+Route #29: 39
+Route #30: 38
+Route #31: 37 11
+Route #32: 9
+Route #33: 13
+Route #34: 17
+Route #35: 18 19 15
+Route #36: 16 14 12 25
+Route #37: 23
+Route #38: 26
+Route #39: 28
+Cost 2890

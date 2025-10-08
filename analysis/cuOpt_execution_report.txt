@@ -1,0 +1,560 @@
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c101.txt ===
+=== Solving CVRPTW ===
+Execution time: 35.24s
+
+=== SOLUTION FOUND ===
+Total cost: 828.94
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c102.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.13s
+
+=== SOLUTION FOUND ===
+Total cost: 828.94
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c103.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.15s
+
+=== SOLUTION FOUND ===
+Total cost: 828.06
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c104.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.86s
+
+=== SOLUTION FOUND ===
+Total cost: 824.78
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c105.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.14s
+
+=== SOLUTION FOUND ===
+Total cost: 828.94
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c106.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.19s
+
+=== SOLUTION FOUND ===
+Total cost: 828.94
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c107.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.44s
+
+=== SOLUTION FOUND ===
+Total cost: 828.94
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c108.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.12s
+
+=== SOLUTION FOUND ===
+Total cost: 828.94
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c109.txt ===
+=== Solving CVRPTW ===
+Execution time: 61.42s
+
+=== SOLUTION FOUND ===
+Total cost: 828.94
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c201.txt ===
+=== Solving CVRPTW ===
+Execution time: 19.32s
+
+=== SOLUTION FOUND ===
+Total cost: 591.56
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c202.txt ===
+=== Solving CVRPTW ===
+Execution time: 20.52s
+
+=== SOLUTION FOUND ===
+Total cost: 591.56
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c203.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.18s
+
+=== SOLUTION FOUND ===
+Total cost: 591.17
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c204.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.14s
+
+=== SOLUTION FOUND ===
+Total cost: 590.60
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c205.txt ===
+=== Solving CVRPTW ===
+Execution time: 19.64s
+
+=== SOLUTION FOUND ===
+Total cost: 588.88
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c206.txt ===
+=== Solving CVRPTW ===
+Execution time: 20.17s
+
+=== SOLUTION FOUND ===
+Total cost: 588.49
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c207.txt ===
+=== Solving CVRPTW ===
+Execution time: 20.08s
+
+=== SOLUTION FOUND ===
+Total cost: 588.29
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/c208.txt ===
+=== Solving CVRPTW ===
+Execution time: 20.01s
+
+=== SOLUTION FOUND ===
+Total cost: 588.32
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r101.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.26s
+
+=== SOLUTION FOUND ===
+Total cost: 1650.80
+Vehicles used: 19
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r102.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.54s
+
+=== SOLUTION FOUND ===
+Total cost: 1486.12
+Vehicles used: 17
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r103.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.20s
+
+=== SOLUTION FOUND ===
+Total cost: 1292.68
+Vehicles used: 13
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r104.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.15s
+
+=== SOLUTION FOUND ===
+Total cost: 984.42
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r105.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.17s
+
+=== SOLUTION FOUND ===
+Total cost: 1377.11
+Vehicles used: 14
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r106.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.22s
+
+=== SOLUTION FOUND ===
+Total cost: 1258.48
+Vehicles used: 12
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r107.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.12s
+
+=== SOLUTION FOUND ===
+Total cost: 1115.84
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r108.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.09s
+
+=== SOLUTION FOUND ===
+Total cost: 993.92
+Vehicles used: 9
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r109.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.45s
+
+=== SOLUTION FOUND ===
+Total cost: 1213.40
+Vehicles used: 11
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r110.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.08s
+
+=== SOLUTION FOUND ===
+Total cost: 1131.04
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r111.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.66s
+
+=== SOLUTION FOUND ===
+Total cost: 1111.48
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r112.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.23s
+
+=== SOLUTION FOUND ===
+Total cost: 964.71
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r201.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.45s
+
+=== SOLUTION FOUND ===
+Total cost: 1253.02
+Vehicles used: 4
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r202.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.08s
+
+=== SOLUTION FOUND ===
+Total cost: 1199.66
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r203.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.17s
+
+=== SOLUTION FOUND ===
+Total cost: 950.27
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r204.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.17s
+
+=== SOLUTION FOUND ===
+Total cost: 840.72
+Vehicles used: 2
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r205.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.06s
+
+=== SOLUTION FOUND ===
+Total cost: 994.43
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r206.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.10s
+
+=== SOLUTION FOUND ===
+Total cost: 915.33
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r207.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.33s
+
+=== SOLUTION FOUND ===
+Total cost: 814.99
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r208.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.69s
+
+=== SOLUTION FOUND ===
+Total cost: 734.57
+Vehicles used: 2
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r209.txt ===
+=== Solving CVRPTW ===
+Execution time: 62.17s
+
+=== SOLUTION FOUND ===
+Total cost: 917.35
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r210.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.40s
+
+=== SOLUTION FOUND ===
+Total cost: 960.75
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/r211.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.59s
+
+=== SOLUTION FOUND ===
+Total cost: 893.17
+Vehicles used: 2
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc101.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.17s
+
+=== SOLUTION FOUND ===
+Total cost: 1636.50
+Vehicles used: 15
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc102.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.14s
+
+=== SOLUTION FOUND ===
+Total cost: 1477.54
+Vehicles used: 13
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc103.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.32s
+
+=== SOLUTION FOUND ===
+Total cost: 1262.02
+Vehicles used: 11
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc104.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.12s
+
+=== SOLUTION FOUND ===
+Total cost: 1136.60
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc105.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.13s
+
+=== SOLUTION FOUND ===
+Total cost: 1629.44
+Vehicles used: 13
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc106.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.18s
+
+=== SOLUTION FOUND ===
+Total cost: 1376.26
+Vehicles used: 12
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc107.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.18s
+
+=== SOLUTION FOUND ===
+Total cost: 1230.95
+Vehicles used: 11
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc108.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.10s
+
+=== SOLUTION FOUND ===
+Total cost: 1140.83
+Vehicles used: 10
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc201.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.12s
+
+=== SOLUTION FOUND ===
+Total cost: 1406.94
+Vehicles used: 4
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc202.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.05s
+
+=== SOLUTION FOUND ===
+Total cost: 1413.47
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc203.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.25s
+
+=== SOLUTION FOUND ===
+Total cost: 1068.60
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc204.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.09s
+
+=== SOLUTION FOUND ===
+Total cost: 798.56
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc205.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.60s
+
+=== SOLUTION FOUND ===
+Total cost: 1297.65
+Vehicles used: 4
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc206.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.73s
+
+=== SOLUTION FOUND ===
+Total cost: 1168.73
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc207.txt ===
+=== Solving CVRPTW ===
+Execution time: 60.09s
+
+=== SOLUTION FOUND ===
+Total cost: 1098.86
+Vehicles used: 3
+
+============================================================
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/inputs/rc208.txt ===
+=== Solving CVRPTW ===
+Execution time: 61.06s
+
+=== SOLUTION FOUND ===
+Total cost: 833.23
+Vehicles used: 3
+
+============================================================
+

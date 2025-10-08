@@ -1,0 +1,27 @@
+filename: RC103
+Vehicles: 25, Capacity: 200
+Total customers : 101
+No of routes: 22
+Route #1: 90 69 98 53
+Route #2: 88 60 78 17 47 14 12
+Route #3: 15 16 11 10
+Route #4: 9 13 73
+Route #5: 79 7
+Route #6: 8 46 4
+Route #7: 1 3 5 45 6 2 55 100 70
+Route #8: 65 82 99 52 86 74 57
+Route #9: 87 59 97 58
+Route #10: 75 77 25
+Route #11: 23 21 48 18 19 49 20
+Route #12: 83 22 24 66 91 80
+Route #13: 92 95 62 67 29 31 34 50
+Route #14: 27 26 28
+Route #15: 30 32
+Route #16: 84 85 63 33
+Route #17: 89 76 51 56
+Route #18: 64 94 93 71
+Route #19: 96 54 72 41
+Route #20: 39 38 37 40
+Route #21: 36 35
+Route #22: 42 44 43 61 81 68
+Cost 2063

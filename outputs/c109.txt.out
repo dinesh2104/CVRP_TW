@@ -1,0 +1,23 @@
+filename: C109
+Vehicles: 25, Capacity: 200
+Total customers : 101
+No of routes: 18
+Route #1: 20 22 21
+Route #2: 24 25 27 29 34
+Route #3: 32 33 31 35 39 36
+Route #4: 38 37 23
+Route #5: 10 11 8 9 6 4 2 1
+Route #6: 98 96 95 94 92 93 97 100 99 91
+Route #7: 89
+Route #8: 90 87 86 85 88
+Route #9: 84 82 83
+Route #10: 81 78 76 71 70 73 77 79 80
+Route #11: 7 3 5 75
+Route #12: 13 17 18 19 15 16 14 12 26
+Route #13: 28 30
+Route #14: 67 65 63 62 74 72 61 64 68
+Route #15: 41 40 42 44 45 46 47 49 52
+Route #16: 48 51 50
+Route #17: 43 55 57 59
+Route #18: 54 53 56 58 60 66 69
+Cost 1275

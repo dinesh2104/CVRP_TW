@@ -1,0 +1,25 @@
+filename: C205
+Vehicles: 25, Capacity: 700
+Total customers : 101
+No of routes: 20
+Route #1: 93 5 11 10
+Route #2: 9 25
+Route #3: 23 26
+Route #4: 28 17 13
+Route #5: 18 19 15
+Route #6: 16 14 12 8 21
+Route #7: 20 22 24 27 30 29 6 32 33 36 34
+Route #8: 39 38
+Route #9: 31 35 37
+Route #10: 75 2 1 99 100 97 94 95
+Route #11: 7 92 98 3 4 89 91 88 86 84 83 82 87 96
+Route #12: 62 74 72 61 64 66 69 68 65 49 41 42
+Route #13: 45 51 50 52
+Route #14: 46 44
+Route #15: 40 57
+Route #16: 55 54 59 58 60
+Route #17: 53 56 47 43 48
+Route #18: 67 63 78 77
+Route #19: 85 81
+Route #20: 76 71 70 73 79 80 90
+Cost 1729

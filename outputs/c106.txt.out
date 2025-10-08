@@ -1,0 +1,37 @@
+filename: C106
+Vehicles: 25, Capacity: 200
+Total customers : 101
+No of routes: 32
+Route #1: 20 21
+Route #2: 22
+Route #3: 25 27 29 34
+Route #4: 32 33 31 35 36
+Route #5: 39
+Route #6: 38
+Route #7: 37
+Route #8: 24 23
+Route #9: 26
+Route #10: 28
+Route #11: 30
+Route #12: 10 11
+Route #13: 13 17 18 19 15 16 14 12
+Route #14: 8 9 6 4 1
+Route #15: 2
+Route #16: 98 96 95 94 92 93 97 100 99 91
+Route #17: 89 88
+Route #18: 85 84
+Route #19: 83 82
+Route #20: 81 78 76 71 70 73 77 79 80
+Route #21: 90 87 86
+Route #22: 3 7
+Route #23: 5 75
+Route #24: 67 65 63 62 74 66 69
+Route #25: 72 61 64 68
+Route #26: 40
+Route #27: 41 42 44 45 48 50
+Route #28: 51
+Route #29: 47 46 49
+Route #30: 52
+Route #31: 43 55 54 53 56 58 60
+Route #32: 57 59
+Cost 1856

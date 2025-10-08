@@ -1,0 +1,43 @@
+filename: C101
+Vehicles: 25, Capacity: 200
+Total customers : 101
+No of routes: 38
+Route #1: 20 21
+Route #2: 22
+Route #3: 25
+Route #4: 24 27 29 34
+Route #5: 33
+Route #6: 32 31 35 36
+Route #7: 39
+Route #8: 38
+Route #9: 37 23
+Route #10: 10 11
+Route #11: 8 9 6 4 1
+Route #12: 2
+Route #13: 98 96 95 94 93
+Route #14: 92 97 100 99 91
+Route #15: 89
+Route #16: 90 87 86 88
+Route #17: 85
+Route #18: 84
+Route #19: 83 82
+Route #20: 81 78 76 71 70 73 77 79 80
+Route #21: 3 7
+Route #22: 5 75
+Route #23: 13 17 18 19 15 16 14 12
+Route #24: 26
+Route #25: 28
+Route #26: 30
+Route #27: 67 65 63 62 74 61 64 68
+Route #28: 55 54 53 56 58 60
+Route #29: 57 59
+Route #30: 40
+Route #31: 41
+Route #32: 42
+Route #33: 43 44 45 48 50
+Route #34: 51
+Route #35: 46 47
+Route #36: 49
+Route #37: 52
+Route #38: 72 66 69
+Cost 2179

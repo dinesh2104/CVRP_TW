@@ -1,0 +1,40 @@
+filename: R201
+Vehicles: 25, Capacity: 1000
+Total customers : 101
+No of routes: 35
+Route #1: 28 53 58
+Route #2: 40 26
+Route #3: 12 80
+Route #4: 68 77
+Route #5: 3
+Route #6: 79 78 34
+Route #7: 33 81 9 51
+Route #8: 71 35
+Route #9: 76 65 50 1
+Route #10: 69 29 24 54
+Route #11: 55 25
+Route #12: 21 73
+Route #13: 72 74
+Route #14: 75 56 4
+Route #15: 39 67 23 22 41 13
+Route #16: 94 6 89
+Route #17: 95 97
+Route #18: 87
+Route #19: 2 57
+Route #20: 15 43
+Route #21: 92 42 37 100
+Route #22: 99 59 98 93
+Route #23: 85 91
+Route #24: 61 16 44
+Route #25: 14 38 86 96
+Route #26: 5 84 17 60
+Route #27: 83 8 46
+Route #28: 45 82 7 88
+Route #29: 19 11 62 10
+Route #30: 90 32
+Route #31: 31 63 70
+Route #32: 30 20 66 48
+Route #33: 47 36 49
+Route #34: 64 18
+Route #35: 52 27
+Cost 2225

@@ -1,0 +1,29 @@
+filename: C203
+Vehicles: 25, Capacity: 700
+Total customers : 101
+No of routes: 24
+Route #1: 93 5 75 2 1 99 100 97 94 95
+Route #2: 7 98 92 3 4 89 91 88 86 84 83 82 87 96
+Route #3: 74
+Route #4: 62 63
+Route #5: 67 72 61 64 66 69 68 65 49 41
+Route #6: 47 42 43 48
+Route #7: 52 50 51 45 46
+Route #8: 44
+Route #9: 40 57
+Route #10: 55 54 59 58 60
+Route #11: 56
+Route #12: 53 77
+Route #13: 78 81 85
+Route #14: 76 71 70 73 79
+Route #15: 80 90 10 8 21
+Route #16: 20 22 24 27 30 29 6 32 35 31
+Route #17: 33 36 34
+Route #18: 39
+Route #19: 37 38 11
+Route #20: 9
+Route #21: 13
+Route #22: 17 19 18
+Route #23: 12 14 16 15 25
+Route #24: 23 26 28
+Cost 2028

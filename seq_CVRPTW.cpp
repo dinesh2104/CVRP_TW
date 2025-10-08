@@ -379,6 +379,8 @@ weight_t calRouteValue(const VRP &vrp, const std::vector<node_t> &aRoute, node_t
 void printOutput(const VRP &vrp, const std::vector<std::vector<node_t>> &final_routes) {
   weight_t total_cost = 0.0;
 
+  cout<<"No of routes: "<<final_routes.size()<<endl;
+
   for (unsigned ii = 0; ii < final_routes.size(); ++ii) {
     std::cout << "Route #" << ii + 1 << ":";
     for (unsigned jj = 0; jj < final_routes[ii].size(); ++jj) {

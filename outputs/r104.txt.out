@@ -1,0 +1,23 @@
+filename: R104
+Vehicles: 25, Capacity: 200
+Total customers : 101
+No of routes: 18
+Route #1: 27 28 53 58
+Route #2: 40 21 73 72 74 22 41
+Route #3: 75 56 67 39 4
+Route #4: 26 23 12 80 68 77
+Route #5: 76 50 1
+Route #6: 69 33 81 34 78 79 3
+Route #7: 51 71 65 35 9
+Route #8: 29 24 54 55 25
+Route #9: 13 97 95 94
+Route #10: 96 59 92 99 93 85 16 86 61
+Route #11: 44 38 14 91 5 60 18
+Route #12: 52 82 48 46 8 45 83
+Route #13: 7 47 36 49 64 88
+Route #14: 62 19 11 63 90 32 10
+Route #15: 31 70 30 20 66
+Route #16: 84 17 98 100 37
+Route #17: 87 57 2
+Route #18: 15 43 42 6 89
+Cost 1391

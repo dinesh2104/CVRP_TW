@@ -1,0 +1,37 @@
+filename: C202
+Vehicles: 25, Capacity: 700
+Total customers : 101
+No of routes: 32
+Route #1: 93 5 75 2 1 99 100 97 94 95
+Route #2: 7 98 92 3 4 89 91 88 86 87 96
+Route #3: 74
+Route #4: 62 72 61 64 66 69 68 65 49 41
+Route #5: 42
+Route #6: 45 51 50 52
+Route #7: 46
+Route #8: 44
+Route #9: 40
+Route #10: 57
+Route #11: 55 54 59 58 60
+Route #12: 56
+Route #13: 53 43 48
+Route #14: 47
+Route #15: 67 63 77
+Route #16: 78 85
+Route #17: 81
+Route #18: 76 71 70 73 79
+Route #19: 80
+Route #20: 83 82 84 90
+Route #21: 10 8 21
+Route #22: 20 22 24 27 30 29 6 32 35 31
+Route #23: 33 36 34
+Route #24: 39
+Route #25: 37 38 11
+Route #26: 9
+Route #27: 13
+Route #28: 17
+Route #29: 18 19 15
+Route #30: 16 14 12 25
+Route #31: 23 26
+Route #32: 28
+Cost 2439
