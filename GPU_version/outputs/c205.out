@@ -1,0 +1,38 @@
+Total number of lines in the file: 110
+Total number of nodes including depot: 101
+Customer 1: (40, 50), Demand: 0, Time Window: [0, 3390], Service Time: 0
+Customer 2: (52, 75), Demand: 10, Time Window: [231, 551], Service Time: 90
+Customer 3: (45, 70), Demand: 30, Time Window: [133, 453], Service Time: 90
+Customer 4: (62, 69), Demand: 10, Time Window: [1087, 1407], Service Time: 90
+Customer 5: (60, 66), Demand: 10, Time Window: [1181, 1501], Service Time: 90
+calling MST kernel
+Post Processing Route
+Post 2 opt Processing Route
+2-opt between 29 and 30 improved cost from 1833.85 to 1832.86
+2-opt between 30 and 33 improved cost from 1838.31 to 1836.05
+2-opt between 31 and 32 improved cost from 1836.05 to 1832.98
+Elapsed time: 0.65876 seconds
+Final Route: 
+Route #1: 93 5 75 2 1 99 100 97 95 
+Route #2: 94 92 98 7 3 4 89 91 88 86 84 83 82 
+Route #3: 87 96 
+Route #4: 74 62 61 64 72 66 69 68 65 49 41 42 
+Route #5: 45 46 
+Route #6: 44 40 
+Route #7: 57 
+Route #8: 55 54 59 58 
+Route #9: 56 53 60 50 52 51 43 47 48 
+Route #10: 63 67 77 78 
+Route #11: 85 81 
+Route #12: 76 71 70 73 79 80 90 
+Route #13: 10 11 
+Route #14: 9 25 
+Route #15: 23 26 
+Route #16: 28 13 17 
+Route #17: 18 19 15 
+Route #18: 16 14 12 8 21 
+Route #19: 22 20 24 27 30 29 6 32 33 34 36 
+Route #20: 39 38 
+Route #21: 37 31 35 
+Route #22: Total Distance: 1833.85
+Final route is valid

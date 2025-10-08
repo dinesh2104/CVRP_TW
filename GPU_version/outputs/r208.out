@@ -1,0 +1,93 @@
+Total number of lines in the file: 110
+Total number of nodes including depot: 101
+Customer 1: (35, 35), Demand: 0, Time Window: [0, 1000], Service Time: 0
+Customer 2: (41, 49), Demand: 10, Time Window: [0, 974], Service Time: 10
+Customer 3: (35, 17), Demand: 7, Time Window: [0, 972], Service Time: 10
+Customer 4: (55, 45), Demand: 13, Time Window: [0, 967], Service Time: 10
+Customer 5: (55, 20), Demand: 19, Time Window: [620, 860], Service Time: 10
+calling MST kernel
+Post Processing Route
+Post 2 opt Processing Route
+2-opt between 6 and 9 improved cost from 1173.71 to 1173.68
+2-opt between 15 and 21 improved cost from 1188.94 to 1185.50
+2-opt between 16 and 20 improved cost from 1219.70 to 1219.40
+2-opt between 17 and 18 improved cost from 1219.40 to 1199.70
+2-opt between 18 and 19 improved cost from 1199.70 to 1189.27
+2-opt between 19 and 20 improved cost from 1189.27 to 1189.17
+2-opt between 21 and 28 improved cost from 1324.18 to 1317.18
+2-opt between 22 and 23 improved cost from 1317.18 to 1315.47
+2-opt between 23 and 25 improved cost from 1322.57 to 1321.46
+2-opt between 24 and 25 improved cost from 1321.46 to 1315.76
+2-opt between 25 and 27 improved cost from 1320.73 to 1320.39
+2-opt between 26 and 27 improved cost from 1320.39 to 1315.72
+2-opt between 30 and 33 improved cost from 1332.63 to 1330.85
+2-opt between 31 and 33 improved cost from 1331.78 to 1327.63
+2-opt between 32 and 34 improved cost from 1330.04 to 1323.11
+2-opt between 33 and 35 improved cost from 1328.15 to 1326.96
+2-opt between 34 and 36 improved cost from 1329.62 to 1319.96
+2-opt between 35 and 36 improved cost from 1319.96 to 1313.02
+2-opt between 36 and 41 improved cost from 1348.56 to 1346.71
+2-opt between 37 and 39 improved cost from 1360.49 to 1355.00
+2-opt between 38 and 39 improved cost from 1355.00 to 1350.86
+2-opt between 39 and 40 improved cost from 1350.86 to 1341.05
+2-opt between 43 and 47 improved cost from 1375.47 to 1366.67
+2-opt between 44 and 47 improved cost from 1373.51 to 1353.71
+2-opt between 45 and 46 improved cost from 1353.71 to 1344.38
+2-opt between 46 and 47 improved cost from 1344.38 to 1339.70
+2-opt between 47 and 51 improved cost from 1377.70 to 1373.45
+2-opt between 48 and 49 improved cost from 1373.45 to 1367.57
+2-opt between 49 and 50 improved cost from 1367.57 to 1358.07
+2-opt between 50 and 53 improved cost from 1374.35 to 1368.95
+2-opt between 51 and 52 improved cost from 1368.95 to 1363.11
+2-opt between 56 and 61 improved cost from 1395.34 to 1395.10
+2-opt between 58 and 60 improved cost from 1429.82 to 1427.55
+2-opt between 59 and 60 improved cost from 1427.55 to 1426.75
+2-opt between 60 and 62 improved cost from 1427.64 to 1423.09
+2-opt between 61 and 62 improved cost from 1423.09 to 1419.50
+2-opt between 62 and 63 improved cost from 1419.50 to 1418.94
+2-opt between 63 and 65 improved cost from 1431.97 to 1429.24
+2-opt between 64 and 65 improved cost from 1429.24 to 1415.95
+2-opt between 68 and 69 improved cost from 1415.95 to 1412.37
+2-opt between 69 and 76 improved cost from 1472.32 to 1472.17
+2-opt between 70 and 73 improved cost from 1507.89 to 1503.51
+2-opt between 71 and 72 improved cost from 1503.51 to 1503.17
+2-opt between 72 and 74 improved cost from 1517.22 to 1517.14
+2-opt between 73 and 74 improved cost from 1517.14 to 1503.46
+2-opt between 78 and 81 improved cost from 1526.52 to 1522.44
+2-opt between 79 and 80 improved cost from 1522.44 to 1514.47
+2-opt between 80 and 86 improved cost from 1548.35 to 1544.32
+2-opt between 81 and 84 improved cost from 1565.98 to 1561.84
+2-opt between 82 and 83 improved cost from 1561.84 to 1556.89
+2-opt between 83 and 84 improved cost from 1556.89 to 1555.24
+2-opt between 84 and 86 improved cost from 1564.57 to 1562.90
+2-opt between 85 and 86 improved cost from 1562.90 to 1558.12
+2-opt between 89 and 92 improved cost from 1567.54 to 1561.05
+2-opt between 90 and 91 improved cost from 1561.05 to 1559.75
+2-opt between 91 and 92 improved cost from 1559.75 to 1558.67
+2-opt between 93 and 99 improved cost from 1690.75 to 1679.74
+2-opt between 94 and 105 improved cost from 1767.65 to 1765.79
+2-opt between 95 and 100 improved cost from 1795.11 to 1790.57
+2-opt between 96 and 97 improved cost from 1790.57 to 1765.34
+2-opt between 97 and 99 improved cost from 1766.15 to 1738.85
+2-opt between 98 and 99 improved cost from 1738.85 to 1737.10
+2-opt between 99 and 100 improved cost from 1737.10 to 1734.11
+2-opt between 100 and 101 improved cost from 1734.11 to 1733.66
+2-opt between 101 and 104 improved cost from 1771.76 to 1770.88
+2-opt between 102 and 103 improved cost from 1770.88 to 1743.88
+2-opt between 103 and 104 improved cost from 1743.88 to 1743.05
+2-opt between 107 and 109 improved cost from 1749.54 to 1745.94
+2-opt between 108 and 109 improved cost from 1745.94 to 1739.57
+Elapsed time: 0.653887 seconds
+Final Route: 
+Route #1: 27 28 53 58 13 94 95 97 
+Route #2: 87 2 57 
+Route #3: 15 43 42 92 59 99 96 5 60 83 8 82 7 88 
+Route #4: 62 10 90 32 63 11 19 31 70 30 20 66 
+Route #5: 48 47 36 49 64 46 45 18 52 84 17 93 
+Route #6: 85 91 61 16 44 14 38 86 37 100 98 
+Route #7: 6 89 40 26 12 80 68 77 3 
+Route #8: 79 78 34 33 81 9 71 65 35 51 
+Route #9: 76 50 1 69 29 24 54 55 25 21 73 72 74 22 41 75 56 
+Route #10: 39 67 23 4 
+Route #11: Total Distance: 1173.71
+Final route is valid

@@ -1,8 +1,3 @@
-//1. First get the input(Done)
-//2. Code for MST (Done)
-//3. Code for different DFS traversals
-//4. Code for different optimization techniques
-
 #include<iostream>
 #include<cuda_runtime.h>
 #include<string.h>
@@ -13,6 +8,8 @@
 #include <thrust/device_free.h>
 #include <ctime>
 #include <math.h>
+#include <random>
+#include <chrono>
 
 using namespace std;
 
@@ -101,21 +98,17 @@ __host__ __device__ float calculateDistance(int x1, int y1, int x2, int y2) {
     return sqrtf(dx * dx + dy * dy); // Squared distance
 }
 
-// __device__ void dfs(int node, bool *visited, int *d_route, int &route_idx, int *d_u, int *d_v) {
-//     printf("%d \n", node);
-//     visited[node] = true;
-//     d_route[route_idx++] = node;
-
-//     int idx=d_u[node];
-//     int idx_end=d_u[node+1];
-//     printf("%d %d\n",idx,idx_end);
-//     for(int i=idx;i<idx_end;i++){
-//         int neighbor=d_v[i];
-//         if(!visited[neighbor]){
-//             dfs(neighbor, visited, d_route, route_idx, d_u, d_v);
-//         }
-//     }
-// }
+__device__ double calculate_cost(int *tour, int tour_length, int *d_x, int *d_y, double *d_demand) {
+    double total_cost = 0.0;
+    for (int i = 0; i < tour_length - 1; i++) {
+        int from = tour[i];
+        int to = tour[i + 1];
+        total_cost += calculateDistance(d_x[from], d_y[from], d_x[to], d_y[to]);
+    }
+    // Add cost to return to depot
+    total_cost += calculateDistance(d_x[tour[tour_length - 1]], d_y[tour[tour_length - 1]], d_x[0], d_y[0]);
+    return total_cost;
+}
 
 // Iterative DFS inside device
 __device__ void dfs_iterative(int start, bool *visited, int *d_route, int &route_idx, int *d_u, int *d_v) {
@@ -128,7 +121,7 @@ __device__ void dfs_iterative(int start, bool *visited, int *d_route, int &route
 
     while (top >= 0) {
         int node = stack[top--];  // pop
-
+        //printf("%d, %d",node,visited[node]);
         if (!visited[node]) {
             //printf("%d \n", node);
 
@@ -150,10 +143,15 @@ __device__ void dfs_iterative(int start, bool *visited, int *d_route, int &route
     }
 }
 
-__global__ void createRoute(int *d_u,int *d_v,int *d_x,int *d_y,double *d_demand,int capacity,double *d_earlyTime,double *d_latestTime,double *d_serviceTime,int *d_route,int nodes, int *final_route) {
-    printf("Creating Route\n");
+__global__ void createRoute(int *d_u,int *d_v,int *d_x,int *d_y,double *d_demand,int capacity,double *d_earlyTime,double *d_latestTime,double *d_serviceTime,int *d_route,int nodes, double *min_route_cost,int *opt_final_route,int *route_len) {
+    //printf("Creating Route\n");
     bool *visited = new bool[nodes];
     int route_idx = 0;
+
+    for(int i=0;i<nodes;i++){
+        visited[i]=false;
+    }
+
     dfs_iterative(0, visited, d_route, route_idx, d_u, d_v);
     
     // printf("DFS interation: ");
@@ -167,7 +165,7 @@ __global__ void createRoute(int *d_u,int *d_v,int *d_x,int *d_y,double *d_demand
     int idx=0;
     int residual_capacity=capacity;
     double current_time=0;
-    final_route[0]=0;
+    int* final_route=new int[route_idx*2];
     idx++;
     int prev=0;
     for(int i=1;i<route_idx;i++){
@@ -206,10 +204,34 @@ __global__ void createRoute(int *d_u,int *d_v,int *d_x,int *d_y,double *d_demand
         }
     }
 
+    // printf("Printing the Final Route\n");
     // for(int i=0;i<idx;i++){
     //     printf("%d ",final_route[i]);
     // }
     // printf("\n");
+
+    double cost=calculate_cost(final_route,idx,d_x,d_y,d_demand);
+
+    //printf("\ncost: %lf\n",cost);
+    if(*min_route_cost==-1 || cost<*min_route_cost ){
+        for(int i=0;i<*route_len;i++){
+            opt_final_route[i]=0;
+        }
+        *min_route_cost=cost;
+        *route_len=idx;
+        for(int i=0;i<idx;i++){
+            opt_final_route[i]=final_route[i];
+        }
+        // printf("Printing the optimal route:\n");
+        // for(int i=0;i<idx;i++){
+        //     if(opt_final_route[i]==-1)
+        //         break;
+        //     printf("%d ",opt_final_route[i]);
+        // }
+        // printf("\n");
+    }
+
+
     delete[] visited;
 }
 
@@ -259,17 +281,6 @@ __device__ bool verify_route(int *tour, int tour_length, int *d_x, int *d_y, dou
     return true;
 }
 
-__device__ double calculate_cost(int *tour, int tour_length, int *d_x, int *d_y, double *d_demand) {
-    double total_cost = 0.0;
-    for (int i = 0; i < tour_length - 1; i++) {
-        int from = tour[i];
-        int to = tour[i + 1];
-        total_cost += calculateDistance(d_x[from], d_y[from], d_x[to], d_y[to]);
-    }
-    // Add cost to return to depot
-    total_cost += calculateDistance(d_x[tour[tour_length - 1]], d_y[tour[tour_length - 1]], d_x[0], d_y[0]);
-    return total_cost;
-}
 
 __device__ bool verify_tour(int *tour,int start, int end, int *d_x, int *d_y, double *d_demand, int capacity, double *d_earlyTime, double *d_latestTime, double *d_serviceTime) {
     double current_time = 0.0;
@@ -327,7 +338,6 @@ __global__ void postprocess_tsp_approx(int *final_route,int route_length,int *d_
         optimized_route[i]=final_route[i];
     }
     int optimized_length=route_length;
-    
     int start=1;
     int end=1;
     for(int i=0;i<route_length-1;i++){
@@ -484,6 +494,49 @@ void printRoute(int *route, int length,int *h_x,int *h_y) {
     cout<<"Total Distance: "<<total_distance<<endl;
 }
 
+bool validateRoute(int *route, int length, int *h_x, int *h_y, double *h_demand, int capacity, double *h_earlyTime, double *h_latestTime, double *h_serviceTime) {
+    // Implement route validation logic here
+    // Check for capacity constraints, time window violations, etc.
+    double current_time = 0.0;
+    int current_load = 0;
+    int prev_node = 0; // Start from depot
+    for (int i = 0; i < length; i++) {
+        int node = route[i];
+        if (node == 0) { // Depot
+            current_time = 0;
+            current_load = 0; // Unload at depot
+            prev_node = 0;
+            continue;
+        }
+
+        // Travel to next node
+        current_time += calculateDistance(h_x[prev_node], h_y[prev_node], h_x[node], h_y[node]) / 50.0 * 60.0;
+
+        // Check time window
+        if (current_time < h_earlyTime[node]) {
+            current_time = h_earlyTime[node]; // Wait until early time
+        }
+        if (current_time > h_latestTime[node]) {
+            printf("Route invalid: Arrived at node %d after latest time.\n", node);
+            return false; // Violates latest time
+        }
+
+        // Service the node
+        current_time += h_serviceTime[node];
+        current_load += h_demand[node];
+
+        // Check capacity
+        if (current_load > capacity) {
+            printf("Route invalid: Capacity exceeded at node %d.\n", node);
+            return false; // Exceeds vehicle capacity
+        }
+
+        prev_node = node;
+    }
+    return true;
+
+}
+
 int main(int argc, char** argv) {
     // if(argc<1) {
     //     std::cout<<"Please provide the input file name"<<std::endl;
@@ -522,6 +575,10 @@ int main(int argc, char** argv) {
     }
     file.close();
     // Code for MST.
+
+    //Time measurement start
+    auto start = std::chrono::high_resolution_clock::now();
+
     int *d_x,*d_y;
     double *d_demand,*d_earlyTime,*d_latestTime,*d_serviceTime;
     cudaMalloc((void**)&d_x,nodes*sizeof(int));
@@ -594,66 +651,116 @@ int main(int argc, char** argv) {
     //TODO: Working fine.........
 
     // Generate Route using Preorder DFS
-    
-    vector<int> h_u(nodes+1);
-    vector<int> h_v;
-    int edge_count=0;
-    for(int i=0;i<nodes;i++){
-        h_u[i]=edge_count;
-        for(int neighbor : mst_adj_list[i]) {
-            h_v.push_back(neighbor);
-        }
-        edge_count+=mst_adj_list[i].size();
-    }
-    h_u[nodes]=edge_count;
-
-    thrust::device_vector<int> d_route(nodes);
-    // Convert adjacency list to CSR format for GPU processing
-    thrust::device_vector<int> d_u(h_u.begin(), h_u.end());
-    thrust::device_vector<int> d_v(h_v.begin(), h_v.end());
+    int step=1;
     thrust::device_vector<int> final_route(nodes*2);
+    thrust::device_vector<int> opt_final_route(nodes*2);
+    int* d_route_len;
+    cudaMalloc(&d_route_len, sizeof(int));
+    cudaMemset(d_route_len, 0, sizeof(int));
 
-    //printing the CSR representation
-    // for(int i=0;i<=nodes;i++){
-    //     printf("%d ",h_u[i]);
-    // }
-    // cout<<endl;
-    // for(int i=0;i<edge_count;i++){
-    //     printf("%d ",h_v[i]);
+    double* d_min_cost_route;
+    cudaMalloc((void**)&d_min_cost_route,nodes*2*sizeof(double));
+    double min_cost_route_length=-1;
+    cudaMemcpy(d_min_cost_route, &min_cost_route_length, sizeof(double), cudaMemcpyHostToDevice);
+
+    while(step<1000){
+
+        //shuffle the adj list
+        for (auto &list : mst_adj_list) {
+            std::shuffle(list.begin(), list.end(), std::default_random_engine(rand()));
+        }   
+    
+        vector<int> h_u(nodes+1);
+        vector<int> h_v;
+        int edge_count=0;
+        for(int i=0;i<nodes;i++){
+            h_u[i]=edge_count;
+            for(int neighbor : mst_adj_list[i]) {
+                h_v.push_back(neighbor);
+            }
+            edge_count+=mst_adj_list[i].size();
+        }
+        h_u[nodes]=edge_count;
+
+
+
+        thrust::device_vector<int> d_route(nodes);
+        // Convert adjacency list to CSR format for GPU processing
+        thrust::device_vector<int> d_u(h_u.begin(), h_u.end());
+        thrust::device_vector<int> d_v(h_v.begin(), h_v.end());
+        
+        
+        //printing the CSR representation
+        // for(int i=0;i<=nodes;i++){
+        //     printf("%d ",h_u[i]);
+        // }
+        // cout<<endl;
+        // for(int i=0;i<edge_count;i++){
+        //     printf("%d ",h_v[i]);
+        // }
+
+        //printing the node and neighbour
+        // cout<<"Printing the CSR:"<<endl;
+        // for(int i=0;i<5;i++){
+        //     printf("%d: ",i);
+        //     for(int j=h_u[i];j<h_u[i+1];j++){
+        //         printf("%d ",h_v[j]);
+        //     }
+        //     printf("\n");
+        // }
+
+        //TODO: checkpoint 2
+        createRoute<<<1,1>>>(thrust::raw_pointer_cast(d_u.data()), thrust::raw_pointer_cast(d_v.data()), d_x, d_y, d_demand, capacity, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_route.data()), nodes,d_min_cost_route,thrust::raw_pointer_cast(opt_final_route.data()),d_route_len);
+        cudaDeviceSynchronize();
+        // for(int i=0;i<final_route.size();i++){
+        //     cout<<final_route[i]<<" ";
+        // }
+        // cout<<endl;
+
+        //TODO: Implement shuffling
+        step++;
+    }
+    // cout<<"print the min cost route:\n";
+    // for(int i=0;i<opt_final_route.size();i++){
+    //     if(opt_final_route[i]==-1)
+    //         break;
+    //     cout<<opt_final_route[i]<<" ";
     // }
 
-    //printing the node and neighbour
-    // cout<<"Printing the CSR:"<<endl;
-    // for(int i=0;i<nodes;i++){
-    //     printf("%d: ",i);
-    //     for(int j=h_u[i];j<h_u[i+1];j++){
-    //         printf("%d ",h_v[j]);
-    //     }
-    //     printf("\n");
-    // }
 
-    //TODO: checkpoint 2
-    createRoute<<<1,1>>>(thrust::raw_pointer_cast(d_u.data()), thrust::raw_pointer_cast(d_v.data()), d_x, d_y, d_demand, capacity, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_route.data()), nodes, thrust::raw_pointer_cast(final_route.data()));
-    cudaDeviceSynchronize();
-    // for(int i=0;i<final_route.size();i++){
-    //     cout<<final_route[i]<<" ";
-    // }
-    // cout<<endl;
-
-    //TODO: Checkpoint 3
     thrust::device_vector<int> d_optimized_route(nodes*2);
 
-    postprocess_tsp_approx<<<1,1>>>(thrust::raw_pointer_cast(final_route.data()), final_route.size(), d_x, d_y, d_demand, 200, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_optimized_route.data()));
+    postprocess_tsp_approx<<<1,1>>>(thrust::raw_pointer_cast(opt_final_route.data()), opt_final_route.size(), d_x, d_y, d_demand, capacity, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_optimized_route.data()));
     cudaDeviceSynchronize();
 
-    thrust::device_vector<int> d_final_route(final_route);
-    postprocess_2_opt<<<1,1>>>(thrust::raw_pointer_cast(d_final_route.data()), d_final_route.size(), d_x, d_y, d_demand, 100, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_optimized_route.data()));
+    thrust::device_vector<int> d_final_route(opt_final_route);
+    postprocess_2_opt<<<1,1>>>(thrust::raw_pointer_cast(d_final_route.data()), d_final_route.size(), d_x, d_y, d_demand, capacity, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_optimized_route.data()));
     cudaDeviceSynchronize();
+
+    //Time measurement end
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "Elapsed time: " << elapsed.count() << " seconds\n";
 
     int *h_final_route=new int[d_final_route.size()];
     cudaMemcpy(h_final_route, thrust::raw_pointer_cast(d_final_route.data()), d_final_route.size()*sizeof(int),cudaMemcpyDeviceToHost);
 
     printRoute(h_final_route, d_final_route.size(),h_x,h_y);
+
+    //Validate the final route in cpu side
+    int *h_final_route_=new int[d_final_route.size()];
+    cudaMemcpy(h_final_route_, thrust::raw_pointer_cast(d_final_route.data()), d_final_route.size()*sizeof(int),cudaMemcpyDeviceToHost);
+    bool isValid=validateRoute(h_final_route_, d_final_route.size(), h_x, h_y, h_demand, capacity, h_earlyTime, h_latestTime, h_serviceTime);
+    
+    // for(int i=0;i<d_final_route.size();i++){
+    //     cout<<h_final_route_[i]<<" ";
+    // }
+    if(isValid){
+        cout<<"Final route is valid"<<endl;
+    }
+    else{
+        cout<<"Final route is invalid"<<endl;
+    }
 
 
 

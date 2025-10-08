@@ -1,0 +1,58 @@
+Total number of lines in the file: 110
+Total number of nodes including depot: 101
+Customer 1: (35, 35), Demand: 0, Time Window: [0, 1000], Service Time: 0
+Customer 2: (41, 49), Demand: 10, Time Window: [0, 974], Service Time: 10
+Customer 3: (35, 17), Demand: 7, Time Window: [0, 972], Service Time: 10
+Customer 4: (55, 45), Demand: 13, Time Window: [0, 967], Service Time: 10
+Customer 5: (55, 20), Demand: 19, Time Window: [678, 801], Service Time: 10
+calling MST kernel
+Post Processing Route
+Post 2 opt Processing Route
+2-opt between 7 and 10 improved cost from 1232.05 to 1223.92
+2-opt between 9 and 11 improved cost from 1238.49 to 1238.41
+2-opt between 10 and 11 improved cost from 1238.41 to 1236.20
+2-opt between 14 and 17 improved cost from 1238.47 to 1235.03
+2-opt between 15 and 16 improved cost from 1235.03 to 1234.63
+2-opt between 16 and 20 improved cost from 1258.78 to 1257.41
+2-opt between 17 and 23 improved cost from 1285.21 to 1285.13
+2-opt between 18 and 20 improved cost from 1288.13 to 1281.19
+2-opt between 22 and 24 improved cost from 1288.27 to 1280.27
+2-opt between 26 and 29 improved cost from 1287.85 to 1282.02
+2-opt between 27 and 28 improved cost from 1282.02 to 1277.03
+2-opt between 28 and 35 improved cost from 1326.17 to 1325.00
+2-opt between 29 and 32 improved cost from 1338.04 to 1334.42
+2-opt between 30 and 32 improved cost from 1335.92 to 1322.45
+2-opt between 31 and 32 improved cost from 1322.45 to 1321.78
+2-opt between 32 and 33 improved cost from 1321.78 to 1320.69
+2-opt between 34 and 36 improved cost from 1397.63 to 1390.67
+2-opt between 35 and 36 improved cost from 1390.67 to 1385.36
+2-opt between 36 and 37 improved cost from 1385.36 to 1356.78
+2-opt between 40 and 46 improved cost from 1390.23 to 1388.45
+2-opt between 41 and 42 improved cost from 1388.45 to 1386.91
+2-opt between 42 and 44 improved cost from 1388.44 to 1375.56
+2-opt between 43 and 44 improved cost from 1375.56 to 1357.02
+2-opt between 45 and 47 improved cost from 1427.53 to 1425.63
+2-opt between 46 and 47 improved cost from 1425.63 to 1418.18
+2-opt between 47 and 48 improved cost from 1418.18 to 1415.06
+2-opt between 48 and 49 improved cost from 1415.06 to 1410.47
+2-opt between 52 and 57 improved cost from 1435.17 to 1424.20
+2-opt between 53 and 55 improved cost from 1437.82 to 1433.69
+2-opt between 54 and 55 improved cost from 1433.69 to 1430.34
+2-opt between 55 and 56 improved cost from 1430.34 to 1419.77
+2-opt between 56 and 58 improved cost from 1424.52 to 1421.19
+2-opt between 57 and 58 improved cost from 1421.19 to 1415.37
+Elapsed time: 0.701677 seconds
+Final Route: 
+Route #1: 27 28 53 58 
+Route #2: 13 94 6 89 95 97 
+Route #3: 92 59 99 96 5 84 17 60 18 52 83 
+Route #4: 8 45 46 82 48 47 36 49 64 7 88 31 70 
+Route #5: 30 20 66 62 10 90 32 63 11 19 93 
+Route #6: 85 61 16 44 38 14 86 91 37 100 98 
+Route #7: 87 2 57 
+Route #8: 15 43 42 40 21 73 72 74 22 41 75 56 39 
+Route #9: 67 23 4 26 12 80 68 29 24 77 
+Route #10: 76 50 1 
+Route #11: 69 3 79 78 34 33 81 9 51 71 35 65 54 55 25 
+Route #12: Total Distance: 1232.05
+Final route is valid
