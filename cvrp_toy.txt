@@ -1,0 +1,16 @@
+eg1
+
+VEHICLE
+NUMBER     CAPACITY
+  25         5
+
+CUSTOMER
+CUST NO.  XCOORD.   YCOORD.    DEMAND   READY TIME  DUE DATE   SERVICE   TIME
+ 
+    0      0         0          0          0       10000          0   
+    1      8         0        2        0        10000         0   
+    2      2         6         1        0        10000         0   
+    3      12         0         1         0        10000         0   
+    4      10         4         3        0        10000         0   
+    5      2         10         1         0         10000         0   
+    6      12         8         2        0        10000         0   

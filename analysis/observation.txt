@@ -148,3 +148,98 @@ Total vehicles used: 3
 Total system distance: 120.18
 Total demand served: 68
 Average distance per vehicle: 40.06
+
+---------------------------------------------------------------------
+cuOpt Cost mismatch analysis:
+
+1) eg.vrp:
+
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/cvrp_toy.txt ===
+
+=== Solving CVRPTW ===
+Execution time: 18.21s
+
+=== SOLUTION FOUND ===
+Total cost: 63.77
+Vehicles used: 2
+
+Vehicle 23: Route [0, 4, 1, 0]
+
+Vehicle 24: Route [0, 3, 6, 5, 2, 0]
+
+================================================================================
+DETAILED ROUTE ANALYSIS
+================================================================================
+
+Vehicle 24:
+  Route: 0 → 3 → 6 → 5 → 2 → 0
+  Total demand served: 5/5
+  Capacity utilization: 100.0%
+  Total distance traveled: 40.52
+  Step-by-step distances:
+    0 → 3: 12.00
+    3 → 6: 8.00
+    6 → 5: 10.20
+    5 → 2: 4.00
+    2 → 0: 6.32
+
+Vehicle 23:
+  Route: 0 → 4 → 1 → 0
+  Total demand served: 5/5
+  Capacity utilization: 100.0%
+  Total distance traveled: 23.24
+  Step-by-step distances:
+    0 → 4: 10.77
+    4 → 1: 4.47
+    1 → 0: 8.00
+
+SYSTEM SUMMARY:
+Total vehicles used: 2
+Total system distance: 63.77
+Total demand served: 10
+Average distance per vehicle: 31.88
+ --------------
+2) Toy.vrp:
+=== Solving /content/drive/MyDrive/MTP/CVRP_TW/cvrp_toy2.txt ===
+
+=== Solving CVRPTW ===
+Execution time: 18.17s
+
+=== SOLUTION FOUND ===
+Total cost: 265.25
+Vehicles used: 2
+
+Vehicle 22: Route [0, 3, 2, 5, 0]
+
+Vehicle 23: Route [0, 1, 4, 0]
+
+================================================================================
+DETAILED ROUTE ANALYSIS
+================================================================================
+
+Vehicle 23:
+  Route: 0 → 1 → 4 → 0
+  Total demand served: 29/30
+  Capacity utilization: 96.7%
+  Total distance traveled: 99.52
+  Step-by-step distances:
+    0 → 1: 21.00
+    1 → 4: 45.28
+    4 → 0: 33.24
+
+Vehicle 22:
+  Route: 0 → 3 → 2 → 5 → 0
+  Total demand served: 27/30
+  Capacity utilization: 90.0%
+  Total distance traveled: 165.74
+  Step-by-step distances:
+    0 → 3: 17.49
+    3 → 2: 52.55
+    2 → 5: 46.86
+    5 → 0: 48.83
+
+SYSTEM SUMMARY:
+Total vehicles used: 2
+Total system distance: 265.25
+Total demand served: 56
+Average distance per vehicle: 132.63
