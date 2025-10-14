@@ -1,3 +1,7 @@
 vtools/
 inputs/
 outputs/
+GPU_version/outputs
+GPU_version/mst
+GPU_version/solver
+seq.out

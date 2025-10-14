@@ -14,7 +14,6 @@
 
 unsigned DEBUGCODE = 0;
 #define DEBUG if (DEBUGCODE)
-#define speed 50
 int flag=1;
 
 using namespace std;
@@ -327,8 +326,8 @@ convertToVrpRoutes(const VRP &vrp, const std::vector<node_t> &singleRoute) {
   for (auto v : singleRoute) {
     if (v == 0)
       continue;
-    process_time+=(vrp.get_dist(prev,v)/speed)*60; // from prev to v
-    //cout<<process_time<<" "<<v<<" "<<((vrp.get_dist(prev,v)/speed)*60)<<" "<<vrp.node[v].earlyTime<<" "<<vrp.node[v].latestTime<<endl;
+    process_time+=(vrp.get_dist(prev,v)); // from prev to v
+    //cout<<process_time<<" "<<v<<" "<<((vrp.get_dist(prev,v))<<" "<<vrp.node[v].earlyTime<<" "<<vrp.node[v].latestTime<<endl;
     if (residueCap - vrp.node[v].demand >= 0 && process_time<=vrp.node[v].latestTime) {  // can add to current route
       aRoute.push_back(v);
       residueCap = residueCap - vrp.node[v].demand;
@@ -338,7 +337,7 @@ convertToVrpRoutes(const VRP &vrp, const std::vector<node_t> &singleRoute) {
     } else {  //new route
       routes.push_back(aRoute);
       aRoute.clear();
-      process_time=(vrp.get_dist(0,v)/speed)*60; // from depot to v
+      process_time=(vrp.get_dist(0,v)); // from depot to v
       if(process_time>vrp.node[v].latestTime){
         std::cerr<<"Infeasible due to time window"<<std::endl;
         exit(1);
@@ -408,7 +407,7 @@ void printOutput(const VRP &vrp, const std::vector<std::vector<node_t>> &final_r
 bool verify_tour(const VRP &vrp,const std::vector<node_t> &tour, node_t ncities) {
   tw_t process_time=0;
   for(int i=1;i<ncities;i++){
-    process_time+=vrp.get_dist(tour[i-1],tour[i])/speed*60; // in minutes
+    process_time+=vrp.get_dist(tour[i-1],tour[i]); // in minutes
     if(process_time>vrp.node[tour[i]].latestTime){
       return false;
     }
@@ -427,7 +426,7 @@ bool verify_route(const VRP &vrp,const std::vector<std::vector<node_t>> &routes)
     tw_t process_time=0;
     node_t prev=0;
     for(auto v:route){
-      process_time+=(vrp.get_dist(prev,v)/speed)*60; // from prev to v
+      process_time+=(vrp.get_dist(prev,v)); // from prev to v
       if(residueCap - vrp.node[v].demand >= 0 && process_time<=vrp.node[v].latestTime){  // can add to current route
         residueCap = residueCap - vrp.node[v].demand;
         process_time=max(process_time,vrp.node[v].earlyTime) + vrp.node[v].serviceTime;

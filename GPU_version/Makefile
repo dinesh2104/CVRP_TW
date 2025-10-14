@@ -6,9 +6,14 @@ test:
 	nvcc -arch=sm_80 mst.cu -o mst
 	./mst c101.txt
 
+test2:
+	nvcc -arch=sm_80 solver.cu -o solver
+	./solver c100.txt
+
 build:
 	nvcc -arch=sm_80 solver.cu -o solver
 
 clean:
 	rm -f solver mst
+	rm -rf outputs
 	
