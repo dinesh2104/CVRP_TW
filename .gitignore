@@ -1,0 +1,16 @@
+# Ignore tool and data folders
+vtool/
+inputs/
+outputs/
+
+# Ignore GPU build outputs
+GPU_version/outputs/
+GPU_version/mst
+GPU_version/solver
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore compiled or generated files
+*.out

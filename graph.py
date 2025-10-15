@@ -109,14 +109,13 @@ def solve_cvrptw_from_file(filename: str):
 
     # Example routes
     routes = [
-        [0, 5, 4, 0],
-        [0, 2, 6, 7, 0],
-        [0, 1, 3, 8,9,10, 0]
+        [0, 3, 1, 2, 5, 4, 8, 0],
+        [0, 7, 6, 10, 9, 0],
     ]
 
     plot_routes(df, routes)
 
 
 # Example usage
-filename = "toy.txt"
+filename = "toy_soft_v2.txt"
 solve_cvrptw_from_file(filename)
