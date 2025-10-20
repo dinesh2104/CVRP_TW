@@ -12,7 +12,7 @@ for file in "$INPUT_DIR"/*.txt; do
     base=$(basename "$file" .txt)
     echo "Processing $file ..."
     
-    "$SOLVER" "$file" > "$OUTPUT_DIR/${base}.out"
+    "$SOLVER" "$file" > "$OUTPUT_DIR/${base}.out" 2>>"$OUTPUT_DIR/results.sol"
     
     echo "Saved output to $OUTPUT_DIR/${base}.out"
 done

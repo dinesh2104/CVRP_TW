@@ -52,16 +52,16 @@ __device__ double calculate_cost(int *tour, int tour_length, int *d_x, int *d_y,
 
 // --------------------------------------------------------------------------
 /* Function that read the data*/
-int read(const string &filename, int *h_x, int *h_y, double *h_demand,
+pair<int,int> read(const string &filename, int *h_x, int *h_y, double *h_demand,
          double *h_earlyTime, double *h_latestTime, double *h_serviceTime)
 {
     ifstream infile(filename);
     if (!infile)
     {
         cerr << "Error opening file: " << filename << endl;
-        return -1;
+        return {-1,-1};
     }
-
+    cerr << filename << ", ";
     string line;
 
     // Skip the first 4 lines
@@ -108,7 +108,7 @@ int read(const string &filename, int *h_x, int *h_y, double *h_demand,
     }
 
     infile.close();
-    return idx;
+    return {idx,vehicleCapacity};
 }
 
 __global__ void weightUpdate(int *d_x, int *d_y, float *d_weights, bool *d_inMST, int *d_parent, int current, int nodes)
@@ -690,7 +690,6 @@ int main(int argc, char *argv[])
     }
     file.close();
 
-    int capacity = 200;
     h_x = new int[count];
     h_y = new int[count];
     h_demand = new double[count];
@@ -699,7 +698,8 @@ int main(int argc, char *argv[])
     h_serviceTime = new double[count];
     // cout<<"Total number of lines in the file: "<<count<<endl;
 
-    int nodes = read(filename, h_x, h_y, h_demand, h_earlyTime, h_latestTime, h_serviceTime);
+    auto [nodes,capacity] = read(filename, h_x, h_y, h_demand, h_earlyTime, h_latestTime, h_serviceTime);
+    cout<<"Vehicle Capacity: "<<capacity<<endl;
     cout << "Total number of nodes including depot: " << nodes << endl;
     for (int i = 0; i < 5; i++)
     {
