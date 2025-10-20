@@ -12,14 +12,11 @@ def read_solomon_file(filename: str):
     with open(filename, "r") as f:
         lines = f.readlines()
 
-    # Strip and split
     lines = [l.strip() for l in lines if l.strip()]
 
-    # Vehicle info (after 'VEHICLE' line)
     vehicle_line_idx = lines.index("VEHICLE") + 2
     num_vehicles, capacity = map(int, lines[vehicle_line_idx].split())
 
-    # Customer info (after 'CUSTOMER' line + header)
     cust_idx = lines.index("CUSTOMER") + 2
     customer_lines = lines[cust_idx:]
 
@@ -39,7 +36,7 @@ def read_solomon_file(filename: str):
     df = pd.DataFrame(cust_data,
                       columns=["cust_id", "x", "y", "demand", "ready", "due", "service"])
 
-    depot = 0  # always first entry in Solomon format
+    depot = 0 
 
     return num_vehicles, capacity, depot, df
 
@@ -48,7 +45,7 @@ def euclidean_distance(coord1: Tuple[int, int], coord2: Tuple[int, int]) -> floa
     return math.sqrt((coord1[0] - coord2[0])**2 + (coord1[1] - coord2[1])**2)
 
 def create_distance_matrix(coordinates: Dict) -> Dict:
-    """Create distance matrix for all node pairs"""
+    """Create distance matrix for all node pairs using Euclidean distance"""
     distances = {}
     for i in coordinates:
         distances[i] = {}
@@ -57,19 +54,15 @@ def create_distance_matrix(coordinates: Dict) -> Dict:
     return distances
 
 def calculate_route_distance(route: List[int], distances: Dict, depot: int) -> float:
-    """Calculate total distance for a route starting and ending at depot"""
     if not route:
         return 0
     
     total_distance = 0
-    # Distance from depot to first customer
     total_distance += distances[depot][route[0]]
     
-    # Distance between consecutive customers
     for i in range(len(route) - 1):
         total_distance += distances[route[i]][route[i + 1]]
     
-    # Distance from last customer back to depot
     total_distance += distances[route[-1]][depot]
     
     return total_distance
@@ -77,33 +70,26 @@ def calculate_route_distance(route: List[int], distances: Dict, depot: int) -> f
 def is_feasible_route(route: List[int], demands: Dict, capacity: int, 
                      time_windows: Dict, service_times: Dict, 
                      distances: Dict, depot: int) -> bool:
-    """Check if a route is feasible (capacity and time window constraints)"""
-    # Check capacity constraint
     total_demand = sum(demands[c] for c in route)
     if total_demand > capacity:
         return False
     
-    # Check time window constraints
-    current_time = time_windows[depot][0]  # Start at depot's ready time
+    current_time = time_windows[depot][0]  
     current_location = depot
     
     for customer in route:
-        # Travel to next customer
-        travel_time = (distances[current_location][customer]*60)/50  # Assuming avg speed 50 units/hour
+        # Assuming travel time equals distance
+        travel_time = (distances[current_location][customer])
         arrival_time = current_time + travel_time
         
-        # Check if we can arrive before the due time
         if arrival_time > time_windows[customer][1]:
             return False
         
-        # Wait if we arrive before ready time
         service_start = max(arrival_time, time_windows[customer][0])
         
-        # Complete service and move to next
         current_time = service_start + service_times[customer]
         current_location = customer
     
-    # Check if we can return to depot in time
     travel_to_depot = distances[current_location][depot]
     return_time = current_time + travel_to_depot
     
@@ -114,13 +100,11 @@ def is_feasible_route(route: List[int], demands: Dict, capacity: int,
 
 def calculate_route_info(route: List[int], distances: Dict, depot: int,
                         time_windows: Dict, service_times: Dict) -> Tuple[float, float]:
-    """Calculate route distance and completion time"""
     if not route:
         return 0, 0
     
     distance = calculate_route_distance(route, distances, depot)
     
-    # Calculate completion time
     current_time = time_windows[depot][0]
     current_location = depot
     
@@ -136,14 +120,12 @@ def calculate_route_info(route: List[int], distances: Dict, depot: int,
     return distance, completion_time
 
 def generate_all_partitions(customers: List[int]) -> List[List[List[int]]]:
-    """Generate all possible partitions of customers into routes"""
     if not customers:
         return [[]]
     
     partitions = []
     n = len(customers)
     
-    # Generate all possible ways to partition customers
     for partition_size in range(1, n + 1):
         for partition in generate_partitions_of_size(customers, partition_size):
             partitions.append(partition)
@@ -151,7 +133,6 @@ def generate_all_partitions(customers: List[int]) -> List[List[List[int]]]:
     return partitions
 
 def generate_partitions_of_size(items: List[int], k: int) -> List[List[List[int]]]:
-    """Generate all partitions of items into exactly k non-empty subsets"""
     if k == 1:
         return [[items]]
     if k == len(items):
@@ -163,11 +144,9 @@ def generate_partitions_of_size(items: List[int], k: int) -> List[List[List[int]
     first = items[0]
     rest = items[1:]
     
-    # Case 1: first item forms its own subset
     for partition in generate_partitions_of_size(rest, k - 1):
         partitions.append([[first]] + partition)
     
-    # Case 2: first item joins one of the existing subsets
     for partition in generate_partitions_of_size(rest, k):
         for i in range(len(partition)):
             new_partition = [subset[:] for subset in partition]
@@ -195,27 +174,22 @@ def solve_cvrptw_exponential(coordinates: Dict, demands: Dict, capacity: int,
     print(f"Demands: {[demands[c] for c in customers]}")
     print()
     
-    # Generate all possible partitions of customers into routes
     all_partitions = generate_all_partitions(customers)
     
     solutions_checked = 0
     feasible_solutions = 0
     
     for partition in all_partitions:
-        # Skip if more routes than available vehicles
         if len(partition) > max_vehicles:
             continue
         
-        # For each feasible partition, try all permutations of each route
         route_permutations = []
         for route in partition:
             route_permutations.append(list(itertools.permutations(route)))
         
-        # Generate all combinations of route permutations
         for perm_combination in itertools.product(*route_permutations):
             solutions_checked += 1
             
-            # Check if all routes are feasible (capacity and time windows)
             feasible = True
             for route_perm in perm_combination:
                 route_list = list(route_perm)
@@ -229,7 +203,6 @@ def solve_cvrptw_exponential(coordinates: Dict, demands: Dict, capacity: int,
             
             feasible_solutions += 1
             
-            # Calculate total distance for this solution
             total_distance = 0
             current_routes = []
             
@@ -238,10 +211,8 @@ def solve_cvrptw_exponential(coordinates: Dict, demands: Dict, capacity: int,
                 current_routes.append(route_list)
                 total_distance += calculate_route_distance(route_list, distances, depot)
 
-            #Print all the routes checked
             print(f"Checked solution with routes: {current_routes}, Total Distance: {total_distance:.2f}")
             
-            # Update best solution if this is better
             if total_distance < best_distance:
                 best_distance = total_distance
                 best_solution = current_routes[:]
@@ -253,13 +224,12 @@ def solve_cvrptw_exponential(coordinates: Dict, demands: Dict, capacity: int,
                     )
                     print(f"  Route {i+1}: {depot} -> {' -> '.join(map(str, route))} -> {depot}")
                     print(f"    Demand: {route_demand}/{capacity}, Distance: {route_dist:.2f}, Time: {route_time:.2f}")
-                    # Detailed timeline
                     print("    Timeline:")
                     current_time = time_windows[depot][0]
                     current_loc = depot
                     print(f"      Start at depot {depot} at time {current_time:.2f}")
                     for customer in route:
-                        travel_time = distances[current_loc][customer]*60/50  # Assuming avg speed 50 units/hour
+                        travel_time = distances[current_loc][customer]
                         arrival = current_time + travel_time
                         start_service = max(arrival, time_windows[customer][0])
                         wait_time = start_service - arrival
@@ -279,11 +249,9 @@ def solve_cvrptw_exponential(coordinates: Dict, demands: Dict, capacity: int,
 def main():
     """Main function to solve the VRPTW instance from file"""
     import sys
-    
-    # Default filename
+    #TODO: Change default filename to a valid Solomon instance file
     filename = "toy2.txt"
     
-    # Check if filename provided as command line argument
     if len(sys.argv) > 1:
         filename = sys.argv[1]
     
@@ -297,7 +265,6 @@ def main():
         print(f"Error parsing file '{filename}': {e}")
         return
     
-    # Extract data from dataframe
     coordinates = {}
     demands = {}
     time_windows = {}
@@ -323,7 +290,6 @@ def main():
     print(f"Max vehicles: {num_vehicles}")
     print()
     
-    # Solve using exponential algorithm
     best_routes, best_distance = solve_cvrptw_exponential(
         coordinates, demands, capacity, depot, customers, 
         time_windows, service_times, num_vehicles

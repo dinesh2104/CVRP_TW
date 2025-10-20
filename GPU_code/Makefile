@@ -2,13 +2,13 @@ all:
 	nvcc -arch=sm_80 solver.cu -o solver
 	./solver c101.txt
 
-test:
+test1:
 	nvcc -arch=sm_80 mst.cu -o mst
-	./mst c101.txt
+	./mst c100.txt
 
 test2:
 	nvcc -arch=sm_80 solver.cu -o solver
-	./solver c100.txt
+	./solver c101.txt
 
 build:
 	nvcc -arch=sm_80 solver.cu -o solver
