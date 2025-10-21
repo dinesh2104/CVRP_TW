@@ -32,7 +32,7 @@ const node_t DEPOT = 0;  // CVRP depot is always assumed to be zero.
 class Params {
   public:
   Params() {
-    toRound = 1;  // DEFAULT is round
+    toRound = 0;  // DEFAULT is round
     //~ nThreads = 20; // DEFAULT is 20 OMP threads
   }
   ~Params() {}
@@ -240,14 +240,18 @@ PrimsAlgo(const VRP &vrp, std::vector<std::vector<Edge>> &graph) {
   key[src] = 0.0;
   active.insert({0.0, src});
 
+  long long edge_cost = 0;
+
   while (active.size() > 0) {
     auto where = active.begin()->second;
+    int cost= active.begin()->first;
 
     //! DEBUG std::cout << "picked " << where <<"\tsize"<< active.size()<< std::endl;
     active.erase(active.begin());
     if (visited[where]) {
       continue;
     }
+    edge_cost += cost;
     visited[where] = true;
     for (Edge E : graph[where]) {
       if (!visited[E.to] && E.length < key[E.to]) {  //W[{where,E.to}]
@@ -259,6 +263,7 @@ PrimsAlgo(const VRP &vrp, std::vector<std::vector<Edge>> &graph) {
     }
   }
 
+  cerr << "edge_cost: " << edge_cost << " ";
 
   //! std::vector < std::pair<int,int>> edges; // not used
   node_t u = 0;
@@ -449,6 +454,12 @@ void tsp_approx(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t>
     tour[i] = cities[i - 1];
 
   tour[0] = cities[ncities - 1];
+  
+  // cout<<"Before TSP Approximation: ";
+  // for(i=0;i<=ncities;i++){
+  //   cout<<tour[i]<<" ";
+  // }
+  // cout<<endl;
 
   for (i = 1; i < ncities; i++) {
     //~ double ThisX = points.x_coords[tour[i-1]];
@@ -475,11 +486,17 @@ void tsp_approx(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t>
   }
   // verify if the tour is valid with respect to time windows and if invalid tour then revert the changes...
   if(verify_tour(vrp,tour,ncities)==false){
+    cout<<"revert"<<endl;
     for(int i=1;i<ncities;i++){
       tour[i]=cities[i-1];
     }
     tour[0]=cities[ncities-1];
   }
+  // cout<<"After TSP Approximation: ";
+  // for(i=0;i<=ncities;i++){
+  //   cout<<tour[i]<<" ";
+  // }
+  // cout<<endl;
 }
 
 std::vector<std::vector<node_t>>
@@ -537,6 +554,11 @@ void tsp_2opt(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t> &
         for (unsigned c = 0; c < i; ++c) {
           tour[c] = cities[c];
         }
+        cout<<"Before 2OPT: ";
+        for(int i=0;i<ncities;i++){
+          cout<<cities[i]<<" ";
+        }
+        cout<<endl;
 
         unsigned dec = 0;
         for (unsigned c = i; c < k + 1; ++c) {
@@ -556,8 +578,15 @@ void tsp_2opt(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t> &
 
         new_distance += vrp.get_dist(DEPOT, tour[ncities - 1]);
 
+        cout<<"After 2OPT: ";
+        for(int i=0;i<ncities;i++){
+          cout<<tour[i]<<" ";
+        }
+        cout<<endl;
+
         if (new_distance < best_distance && verify_tour(vrp,tour,ncities)) {
           // Improvement found so reset
+          cout<<"2OPT Improvement: "<<best_distance<<" to "<<new_distance<<endl;
           improve = 0;
           for (unsigned jj = 0; jj < ncities; jj++)
             cities[jj] = tour[jj];
@@ -750,8 +779,14 @@ int main(int argc, char *argv[]) {
   auto cG = vrp.cal_graph_dist();  // complete graph.
 
   //vrp.print_dist();
+  clock_t pre_st=clock();
 
   auto mstG = PrimsAlgo(vrp, cG);
+
+  clock_t pre_end=clock();
+  cerr<< "MST pre-proc Time: " << (double)(pre_end-pre_st)/CLOCKS_PER_SEC;
+  
+  clock_t mid_st=clock();
 
   std::vector<bool> visited(mstG.size(), false);
   visited[0] = true;
@@ -815,9 +850,17 @@ int main(int argc, char *argv[]) {
   }
 
   weight_t min_cost_after_super_loop = minCost;
+
   auto time_till_super_loop = (double)((chrono::high_resolution_clock::now() - start).count() * 1.E-9);
 
-  auto postRoutes = postProcessIt(vrp, minRoute, minCost);
+  clock_t mid_end=clock();
+  cerr<< " MST Main loop time: " << (double)(mid_end-mid_st)/CLOCKS_PER_SEC<<" ";
+
+  clock_t post_st=clock();
+
+  //auto postRoutes = postProcessIt(vrp, minRoute, minCost);
+  auto postRoutes = minRoute;
+
   chrono::high_resolution_clock::time_point end = chrono::high_resolution_clock::now();
   uint64_t elapsed = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
   double total_time = (double)(elapsed * 1.E-9);
@@ -826,6 +869,10 @@ int main(int argc, char *argv[]) {
   /// VALIDATION
   bool verified = false;
   verified = verify_sol(vrp, postRoutes, vrp.getCapacity()) && verify_route(vrp,postRoutes);
+
+  clock_t post_end=clock();
+  cerr<< " Post-process Time: " << (double)(post_end-post_st)/CLOCKS_PER_SEC;
+
   if (verified)
   {
     cerr << " Cost " << min_cost_after_one_iteration << " "

@@ -7,7 +7,7 @@ test1:
 
 test2:
 	$(CXX) seq_CVRPTW.cpp -o seq.out
-	./seq.out c101.txt
+	./seq.out r102.txt
 
 build:
 	$(CXX) seq_CVRPTW.cpp -o seq.out

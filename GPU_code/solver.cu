@@ -11,6 +11,7 @@
 #include <cmath>
 #include <random>
 #include <algorithm>
+//#define MAX_ROUTE_LEN 256
 
 using namespace std;
 
@@ -35,7 +36,7 @@ __host__ __device__ float calculateDistance(int x1, int y1, int x2, int y2)
     return sqrtf(dx * dx + dy * dy); // Squared distance
 }
 
-/* Device function to calculate cost of a given tour/route */
+/* Device function to calculate cost of a given tour/route is the route is 0 x y z 0 */
 __device__ double calculate_cost(int *tour, int tour_length, int *d_x, int *d_y, double *d_demand)
 {
     double total_cost = 0.0;
@@ -340,13 +341,11 @@ __device__ bool verify_route(int *tour, int tour_length, int *d_x, int *d_y, dou
             continue;
         }
 
-        // Travel to next node
         current_time += calculateDistance(d_x[prev_node], d_y[prev_node], d_x[node], d_y[node]);
 
-        // Check time window
         if (current_time < d_earlyTime[node])
         {
-            current_time = d_earlyTime[node]; // Wait until early time
+            current_time = d_earlyTime[node];
         }
         if (current_time > d_latestTime[node])
         {
@@ -354,7 +353,6 @@ __device__ bool verify_route(int *tour, int tour_length, int *d_x, int *d_y, dou
             return false; // Violates latest time
         }
 
-        // Service the node
         current_time += d_serviceTime[node];
         current_load += d_demand[node];
 
@@ -582,6 +580,113 @@ __global__ void postprocess_2_opt(int *final_route, int route_length, int *d_x, 
     // printf("\n");
 }
 
+
+// __global__ void postprocess_2_opt(
+//     int *final_route, int total_length,
+//     int *d_x, int *d_y, double *d_demand,
+//     int capacity, double *d_earlyTime, double *d_latestTime, double *d_serviceTime,
+//     int *optimized_route)
+// {
+//     int tid = threadIdx.x + blockIdx.x * blockDim.x;
+//     if (tid != 0) return;
+
+//     int start = -1;
+//     int end = -1;
+
+//     // Iterate through all routes
+//     for (int idx = 0; idx < total_length; ++idx)
+//     {
+//         if (final_route[idx] == 0)
+//         {
+//             if (start == -1)
+//             {
+//                 start = idx;
+//             }
+//             else
+//             {
+//                 end = idx;
+
+//                 int route_length = end - start + 1;
+
+//                 // printf("Optimizing route from index %d to %d: ", start, end);
+//                 // for (int i = start; i <= end; i++)
+//                 // {
+//                 //     printf("%d ", final_route[i]);
+//                 // }
+//                 // printf("\n");
+
+//                 if (route_length - 2 > 2)
+//                 {
+//                     int local_route[MAX_ROUTE_LEN];
+//                     int local_opt[MAX_ROUTE_LEN];
+
+//                     for (int i = 0; i < route_length; ++i)
+//                     {
+//                         local_route[i] = final_route[start + i];
+//                         local_opt[i] = final_route[start + i];
+//                     }
+
+
+//                     double best_distance = calculate_cost(local_route, route_length, d_x, d_y, d_demand);
+
+//                     bool improvement = true;
+//                     int iteration = 0;
+
+//                     while (improvement && iteration < 10)
+//                     {
+//                         improvement = false;
+
+//                         for (int i = 1; i < route_length - 2; ++i)
+//                         {
+//                             for (int k = i + 1; k < route_length - 1; ++k)
+//                             {
+//                                 int temp[MAX_ROUTE_LEN];
+//                                 for (int c = 0; c < i; ++c)
+//                                     temp[c] = local_opt[c];
+//                                 int dec = 0;
+//                                 for (int c = i; c <= k; ++c)
+//                                     temp[c] = local_opt[k - dec++];
+//                                 for (int c = k + 1; c < route_length; ++c)
+//                                     temp[c] = local_opt[c];
+
+//                                 double new_distance = calculate_cost(temp, route_length, d_x, d_y, d_demand);
+
+//                                 if (new_distance + 1e-6 < best_distance &&
+//                                     verify_route(temp, route_length, d_x, d_y, d_demand,
+//                                                  capacity, d_earlyTime, d_latestTime, d_serviceTime))
+//                                 {
+//                                     for (int c = 0; c < route_length; ++c)
+//                                         local_opt[c] = temp[c];
+
+//                                     best_distance = new_distance;
+//                                     improvement = true;
+
+//                                     printf("Improved route [%d-%d]: cost %.2f -> %.2f (swap %d,%d)\n",
+//                                            start, end, best_distance, new_distance, i, k);
+//                                 }
+//                             }
+//                         }
+//                         iteration++;
+//                     }
+
+//                     // Copy optimized route back to global final_route
+//                     for (int i = 0; i < route_length; ++i)
+//                         final_route[start + i] = local_opt[i];
+
+//                     printf("Route [%d-%d] optimized: final cost = %.2f\n", start, end, best_distance);
+//                 }
+
+//                 // Prepare for next route
+//                 start = end;  // next route will start here again
+//             }
+//         }
+//     }
+
+//     printf("All 2-OPT route optimizations complete.\n");
+// }
+
+
+
 void printRoute(int *route, int length, int *h_x, int *h_y)
 {
     // calculate total distance
@@ -612,7 +717,7 @@ void printRoute(int *route, int length, int *h_x, int *h_y)
         prev = 0;
     }
     cout << "Total Distance: " << total_distance << endl;
-    cerr << total_distance << ", " << k << endl;
+    cerr << total_distance << ", " << k <<", ";
 }
 
 bool validateRoute(int *route, int length, int *h_x, int *h_y, double *h_demand, int capacity, double *h_earlyTime, double *h_latestTime, double *h_serviceTime)
@@ -747,6 +852,9 @@ int main(int argc, char *argv[])
     // ======================== Main code ====================================
     clock_t begin = clock();
 
+    clock_t pre_start=clock();
+    /* Pre-processing includes initial MST construction */
+
     // cout<<"calling MST kernel"<<endl;
     while (cnt < nodes - 1)
     {
@@ -768,6 +876,8 @@ int main(int argc, char *argv[])
     //     cout<<"Node: "<<i<<", Parent: "<<d_parent[i]<<endl;
     // }
 
+    cerr<<"MST Cost:, "<<edge_sum<<", ";
+
     cout << "MST cost: " << edge_sum << endl;
     // TODO: MST working for 1000 nodes.
 
@@ -779,6 +889,12 @@ int main(int argc, char *argv[])
         mst_adj_list[parent].push_back(i);
         mst_adj_list[i].push_back(parent); // Since the MST is undirected
     }
+
+    clock_t pre_end=clock();
+    cerr << "MST Pre-processing time:, "<<double(pre_end - pre_start) / CLOCKS_PER_SEC<<", ";
+
+    clock_t mid_start=clock();
+    /* It includes shuffling + DFS kernel + Route Construction*/
 
     /* Generate Route using Preorder DFS*/
     int step = 1;
@@ -853,18 +969,24 @@ int main(int argc, char *argv[])
     // }
     // cout<<endl;
 
+    clock_t mid_end=clock();
+    cerr << "Main Loop time:, "<<double(mid_end - mid_start) / CLOCKS_PER_SEC<<", ";
+
     // TODO: Working fine for 1000 nodes
 
     // TODO: Need to Optimise and refactor the post processing...
 
+    clock_t post_start=clock();
+    /* Post-process includes tsp approx + 2-opt + final gpu to cpu memcpy + checking the final route validity*/
+
     thrust::device_vector<int> d_optimized_route(nodes * 2);
 
-    postprocess_tsp_approx<<<1, 1>>>(thrust::raw_pointer_cast(d_opt_final_route.data()), d_opt_final_route.size(), d_x, d_y, d_demand, capacity, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_optimized_route.data()));
-    cudaDeviceSynchronize();
+    //postprocess_tsp_approx<<<1, 1>>>(thrust::raw_pointer_cast(d_opt_final_route.data()), d_opt_final_route.size(), d_x, d_y, d_demand, capacity, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_optimized_route.data()));
+    //cudaDeviceSynchronize();
 
     thrust::device_vector<int> d_final_route(d_opt_final_route);
-    postprocess_2_opt<<<1,1>>>(thrust::raw_pointer_cast(d_final_route.data()), d_final_route.size(), d_x, d_y, d_demand, capacity, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_optimized_route.data()));
-    cudaDeviceSynchronize();
+    //postprocess_2_opt<<<1,1>>>(thrust::raw_pointer_cast(d_final_route.data()), d_final_route.size(), d_x, d_y, d_demand, capacity, d_earlyTime, d_latestTime, d_serviceTime, thrust::raw_pointer_cast(d_optimized_route.data()));
+    //cudaDeviceSynchronize();
 
     clock_t end = clock();
 
@@ -884,7 +1006,8 @@ int main(int argc, char *argv[])
     cudaMemcpy(h_final_route_, thrust::raw_pointer_cast(d_final_route.data()), d_final_route.size() * sizeof(int), cudaMemcpyDeviceToHost);
     bool isValid = validateRoute(h_final_route_, d_final_route.size(), h_x, h_y, h_demand, capacity, h_earlyTime, h_latestTime, h_serviceTime);
 
-    
+    clock_t post_end=clock();
+    cerr << "Post-processing time:, "<<double(post_end - post_start) / CLOCKS_PER_SEC<<endl;
 
     // for(int i=0;i<d_final_route.size();i++){
     //     cout<<h_final_route_[i]<<" ";

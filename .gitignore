@@ -4,11 +4,17 @@ outputs/
 vtools/
 __pycache__/
 Utility/
+tinput/
+toutput/
+mrun.sh
 
 # Ignore GPU build outputs
 GPU_code/outputs/
 GPU_code/mst
 GPU_code/solver
+GPU_code/tinput/
+GPU_code/toutput/
+GPU_code/mcuda_run.sh
 
 # Ignore Python cache
 __pycache__/
