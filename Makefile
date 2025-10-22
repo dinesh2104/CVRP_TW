@@ -3,7 +3,7 @@ CXX = g++
 # Testing
 test1:
 	$(CXX) seq_CVRPTW.cpp -o seq.out
-	./seq.out c100.txt
+	./seq.out c101.txt
 
 test2:
 	$(CXX) seq_CVRPTW.cpp -o seq.out

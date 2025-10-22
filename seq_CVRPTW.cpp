@@ -409,6 +409,7 @@ void printOutput(const VRP &vrp, const std::vector<std::vector<node_t>> &final_r
   std::cout << "Cost " << total_cost << std::endl;
 }
 
+/* Verify tour require tour starting from depot eg 0 1 2 3 */
 bool verify_tour(const VRP &vrp,const std::vector<node_t> &tour, node_t ncities) {
   tw_t process_time=0;
   for(int i=1;i<ncities;i++){
@@ -423,9 +424,6 @@ bool verify_tour(const VRP &vrp,const std::vector<node_t> &tour, node_t ncities)
 
 bool verify_route(const VRP &vrp,const std::vector<std::vector<node_t>> &routes) {
   demand_t vCapacity = vrp.getCapacity();
-  
-  
-
   for(auto route:routes){
     demand_t residueCap = vCapacity;
     tw_t process_time=0;
@@ -455,12 +453,6 @@ void tsp_approx(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t>
 
   tour[0] = cities[ncities - 1];
   
-  // cout<<"Before TSP Approximation: ";
-  // for(i=0;i<=ncities;i++){
-  //   cout<<tour[i]<<" ";
-  // }
-  // cout<<endl;
-
   for (i = 1; i < ncities; i++) {
     //~ double ThisX = points.x_coords[tour[i-1]];
     //~ double ThisY = points.y_coords[tour[i-1]];
@@ -486,17 +478,12 @@ void tsp_approx(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t>
   }
   // verify if the tour is valid with respect to time windows and if invalid tour then revert the changes...
   if(verify_tour(vrp,tour,ncities)==false){
-    cout<<"revert"<<endl;
+    //cout<<"Reverting TSP Approximation as tour invalid"<<endl;
     for(int i=1;i<ncities;i++){
       tour[i]=cities[i-1];
     }
     tour[0]=cities[ncities-1];
   }
-  // cout<<"After TSP Approximation: ";
-  // for(i=0;i<=ncities;i++){
-  //   cout<<tour[i]<<" ";
-  // }
-  // cout<<endl;
 }
 
 std::vector<std::vector<node_t>>
@@ -524,79 +511,70 @@ postprocess_tsp_approx(const VRP &vrp, std::vector<std::vector<node_t>> &solRout
     for (unsigned kk = 1; kk < sz + 1; ++kk) {
       curr_route.push_back(tour[kk]);
     }
-
     modifiedRoutes.push_back(curr_route);
   }
   return modifiedRoutes;
 }
 
 void tsp_2opt(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t> &tour, unsigned ncities) {
-  // 'cities' contains the original solution. It is updated during the course of the 2opt-scheme to contain the 2opt soln.
-  // 'tour' is an auxillary array.
+  // cities: customer-only vector of length ncities
+  // tour: aux array length ncities
 
-  // repeat until no improvement is made
   unsigned improve = 0;
 
   while (improve < 2) {
     double best_distance = 0.0;
 
-    best_distance += vrp.get_dist(DEPOT, cities[0]);  // computing distance of the first point in the route with the depot.
-
-    for (unsigned jj = 1; jj < ncities; ++jj) {
+    best_distance += vrp.get_dist(DEPOT, cities[0]);
+    for (unsigned jj = 1; jj < ncities; ++jj)
       best_distance += vrp.get_dist(cities[jj - 1], cities[jj]);
-    }
+    best_distance += vrp.get_dist(cities[ncities - 1], DEPOT);
 
-    best_distance += vrp.get_dist(DEPOT, cities[ncities - 1]);
-    // 1x 2x 3x 4 5
-    //  1 2  3  4 5
-    for (unsigned i = 0; i < ncities - 1; i++) {
-      for (unsigned k = i + 1; k < ncities; k++) {
-        for (unsigned c = 0; c < i; ++c) {
+    for (unsigned i = 0; i < ncities - 1; ++i) {
+      for (unsigned k = i + 1; k < ncities; ++k) {
+
+        // prefix [0..i-1]
+        for (unsigned c = 0; c < i; ++c)
           tour[c] = cities[c];
-        }
-        cout<<"Before 2OPT: ";
-        for(int i=0;i<ncities;i++){
-          cout<<cities[i]<<" ";
-        }
-        cout<<endl;
 
+        // reversed segment [i..k]
         unsigned dec = 0;
-        for (unsigned c = i; c < k + 1; ++c) {
+        for (unsigned c = i; c <= k; ++c) {
           tour[c] = cities[k - dec];
-          dec++;
+          ++dec;
         }
 
-        for (unsigned c = k + 1; c < ncities; ++c) {
+        // suffix [k+1..ncities-1]
+        for (unsigned c = k + 1; c < ncities; ++c)
           tour[c] = cities[c];
-        }
+
+        // compute new distance (with depot legs)
         double new_distance = 0.0;
-
         new_distance += vrp.get_dist(DEPOT, tour[0]);
-        for (unsigned jj = 1; jj < ncities; ++jj) {
+        for (unsigned jj = 1; jj < ncities; ++jj)
           new_distance += vrp.get_dist(tour[jj - 1], tour[jj]);
-        }
+        new_distance += vrp.get_dist(tour[ncities - 1], DEPOT);
 
-        new_distance += vrp.get_dist(DEPOT, tour[ncities - 1]);
+        // Build a temp tour WITH depot for verification (if verifier expects depot at index 0)
+        std::vector<node_t> tmp_tour_with_depot;
+        tmp_tour_with_depot.reserve(ncities + 1);
+        tmp_tour_with_depot.push_back(DEPOT);            // depot at pos 0
+        for (unsigned t = 0; t < ncities; ++t) tmp_tour_with_depot.push_back(tour[t]);
 
-        cout<<"After 2OPT: ";
-        for(int i=0;i<ncities;i++){
-          cout<<tour[i]<<" ";
-        }
-        cout<<endl;
-
-        if (new_distance < best_distance && verify_tour(vrp,tour,ncities)) {
-          // Improvement found so reset
-          cout<<"2OPT Improvement: "<<best_distance<<" to "<<new_distance<<endl;
+        // Call verify_tour with correct size (ncities + 1) and appropriate flag
+        if (new_distance < best_distance && verify_tour(vrp, tmp_tour_with_depot, ncities + 1)) {
+          //std::cout << "2OPT Improvement: " << best_distance << " to " << new_distance << std::endl;
           improve = 0;
-          for (unsigned jj = 0; jj < ncities; jj++)
+          for (unsigned jj = 0; jj < ncities; ++jj)
             cities[jj] = tour[jj];
           best_distance = new_distance;
         }
       }
     }
-    improve++;
+    ++improve;
   }
 }
+
 
 std::vector<std::vector<node_t>>
 postprocess_2OPT(const VRP &vrp, std::vector<std::vector<node_t>> &final_routes) {
@@ -653,10 +631,26 @@ postProcessIt(const VRP &vrp, std::vector<std::vector<node_t>> &final_routes, we
   std::vector<std::vector<node_t>> postprocessed_final_routes;
 
   auto postprocessed_final_routes1 = postprocess_tsp_approx(vrp, final_routes);
+  if(verify_route(vrp,postprocessed_final_routes1)){
+    cout<<"\nPostprocess 1 route valid"<<endl;
+  }else{
+    cout<<"\nPostprocess 1 route invalid"<<endl;
+  }
   auto postprocessed_final_routes2 = postprocess_2OPT(vrp, postprocessed_final_routes1);
+  if(verify_route(vrp,postprocessed_final_routes2)){
+    cout<<"Postprocess 2 route valid"<<endl;
+  }else{
+    cout<<"Postprocess 2 route invalid"<<endl;
+  }
   auto postprocessed_final_routes3 = postprocess_2OPT(vrp, final_routes);
 
   weight_t postprocessed_final_routes_cost = 0;
+  
+  if(verify_route(vrp,postprocessed_final_routes3)){
+    cout<<"Postprocess 3 route valid"<<endl;
+  }else{
+    cout<<"Postprocess 3 route invalid"<<endl;
+  }
 
   for (unsigned zzz = 0; zzz < final_routes.size(); ++zzz) {
     // include the better route between postprocessed_final_routes2[zzz] and postprocessed_final_routes3[zzz] in the final solution.
@@ -858,8 +852,8 @@ int main(int argc, char *argv[]) {
 
   clock_t post_st=clock();
 
-  //auto postRoutes = postProcessIt(vrp, minRoute, minCost);
-  auto postRoutes = minRoute;
+  auto postRoutes = postProcessIt(vrp, minRoute, minCost);
+  //auto postRoutes = minRoute;
 
   chrono::high_resolution_clock::time_point end = chrono::high_resolution_clock::now();
   uint64_t elapsed = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
