@@ -442,6 +442,15 @@ bool verify_route(const VRP &vrp,const std::vector<std::vector<node_t>> &routes)
   return true;
 }
 
+double calculate_tour_distance(const VRP &vrp,const std::vector<node_t> &tour, node_t ncities) {
+  double total_distance=0.0;
+  for(int i=1;i<ncities;i++){
+    total_distance+=vrp.get_dist(tour[i-1],tour[i]);
+  }
+  total_distance+=vrp.get_dist(tour[ncities-1],tour[0]);
+  return total_distance;
+}
+
 void tsp_approx(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t> &tour, node_t ncities) {
   node_t i, j;
   node_t ClosePt = 0;
@@ -452,6 +461,8 @@ void tsp_approx(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t>
     tour[i] = cities[i - 1];
 
   tour[0] = cities[ncities - 1];
+  
+  double bestDistance=calculate_tour_distance(vrp,tour,ncities);
   
   for (i = 1; i < ncities; i++) {
     //~ double ThisX = points.x_coords[tour[i-1]];
@@ -475,15 +486,26 @@ void tsp_approx(const VRP &vrp, std::vector<node_t> &cities, std::vector<node_t>
     unsigned temp = tour[i];
     tour[i] = tour[ClosePt];
     tour[ClosePt] = temp;
-  }
-  // verify if the tour is valid with respect to time windows and if invalid tour then revert the changes...
-  if(verify_tour(vrp,tour,ncities)==false){
-    //cout<<"Reverting TSP Approximation as tour invalid"<<endl;
-    for(int i=1;i<ncities;i++){
-      tour[i]=cities[i-1];
+
+    double newDistance=calculate_tour_distance(vrp,tour,ncities);
+    if(newDistance<bestDistance && verify_tour(vrp,tour,ncities)==true){
+      bestDistance=newDistance;
+    }else{
+      //revert the swap
+      temp = tour[i];
+      tour[i] = tour[ClosePt];
+      tour[ClosePt] = temp;
     }
-    tour[0]=cities[ncities-1];
+
   }
+  // // verify if the tour is valid with respect to time windows and if invalid tour then revert the changes...
+  // if(verify_tour(vrp,tour,ncities)==false){
+  //   //cout<<"Reverting TSP Approximation as tour invalid"<<endl;
+  //   for(int i=1;i<ncities;i++){
+  //     tour[i]=cities[i-1];
+  //   }
+  //   tour[0]=cities[ncities-1];
+  // }
 }
 
 std::vector<std::vector<node_t>>
