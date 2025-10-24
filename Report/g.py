@@ -1,0 +1,170 @@
+import math
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
+from scipy.spatial import distance_matrix
+
+# -----------------------------
+# 1. Define CVRPTW instance
+# -----------------------------
+nodes = {
+    0: {'x': 0.0,  'y': 0.0,  'demand': 0, 'a': 0,   'b': 300, 'service': 0},
+    1: {'x': 9.0,  'y': 0.5,  'demand': 2, 'a': 0,   'b': 120, 'service': 10},
+    2: {'x': 3.0,  'y': 6.5,  'demand': 1, 'a': 20,  'b': 100, 'service': 10},
+    3: {'x': 13.0, 'y': 0.0,  'demand': 1, 'a': 0,   'b': 90,  'service': 10},
+    4: {'x': 10.5, 'y': 4.2,  'demand': 3, 'a': 40,  'b': 140, 'service': 10},
+    5: {'x': 2.0,  'y': 11.0, 'demand': 1, 'a': 30,  'b': 110, 'service': 10},
+    6: {'x': 12.0, 'y': 8.5,  'demand': 2, 'a': 60,  'b': 160, 'service': 10},
+}
+capacity = 5
+
+# Compute distance matrix
+ids = sorted(nodes.keys())
+coords = np.array([[nodes[i]['x'], nodes[i]['y']] for i in ids])
+dist_mat = distance_matrix(coords, coords)
+
+# Build full graph and MST
+G = nx.Graph()
+for i in ids:
+    for j in ids:
+        if i < j:
+            G.add_edge(i, j, weight=dist_mat[i, j])
+mst = nx.minimum_spanning_tree(G)
+
+# -----------------------------
+# 2. Helper functions
+# -----------------------------
+def randomized_adj_lists(mst_graph):
+    adj = {n: list(mst_graph.neighbors(n)) for n in mst_graph.nodes()}
+    for n in adj:
+        random.shuffle(adj[n])
+    return adj
+
+def dfs_from_adj(adj, start=0):
+    visited, stack, order = set(), [start], []
+    while stack:
+        v = stack.pop()
+        if v not in visited:
+            visited.add(v)
+            order.append(v)
+            stack.extend(reversed(adj[v]))
+    return order
+
+def convert_to_routes(pi, nodes, capacity, dist_mat):
+    customers = [p for p in pi if p != 0]
+    routes, cur_route = [], [0]
+    cur_load, time, cur_node = 0, 0, 0
+    for cust in customers:
+        demand = nodes[cust]['demand']
+        travel = dist_mat[cur_node, cust]
+        arrive = time + travel
+        start_service = max(arrive, nodes[cust]['a'])
+        if start_service > nodes[cust]['b'] or (cur_load + demand) > capacity:
+            routes.append(cur_route + [0])
+            cur_route, cur_load, time, cur_node = [0], 0, 0, 0
+        cur_route.append(cust)
+        cur_load += demand
+        time = start_service + nodes[cust]['service']
+        cur_node = cust
+    routes.append(cur_route + [0])
+    total_dist = sum(dist_mat[a, b] for r in routes for a, b in zip(r[:-1], r[1:]))
+    return True, routes, total_dist
+
+# -----------------------------
+# 3. Generate DFS solutions
+# -----------------------------
+n_iter = 4
+results = []
+for i in range(n_iter):
+    adj = randomized_adj_lists(mst)
+    pi = dfs_from_adj(adj)
+    feasible, routes, cost = convert_to_routes(pi, nodes, capacity, dist_mat)
+    results.append({'pi': pi, 'routes': routes, 'cost': cost})
+best = sorted(results, key=lambda r: r['cost'])[0]
+
+# =====================================================
+# (a) Input Instance Plot
+# =====================================================
+plt.figure(figsize=(6,6))
+plt.title("(a) Input instance I", fontsize=13, fontweight='bold')
+for i, p in nodes.items():
+    color = 'limegreen' if i == 0 else 'lavender'
+    plt.scatter(p['x'], p['y'], c=color, s=300, edgecolor='black')
+    plt.text(p['x'], p['y']+0.5, f"{i}", ha='center', fontweight='bold')
+    plt.text(p['x']+0.5, p['y']+1, f"({p['x']},{p['y']})", fontsize=9, color='dimgray')
+plt.xlabel("x")
+plt.ylabel("y")
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.xlim(-2, 15)
+plt.ylim(-2, 13)
+plt.gca().set_aspect('equal')
+plt.tight_layout()
+plt.show()
+
+# =====================================================
+# (b) Graph + MST with edge distances
+# =====================================================
+plt.figure(figsize=(8,6))
+plt.title("(b) Graph for I, along with node-demands and MST edges", fontsize=12, fontweight='bold')
+# full edges
+for u, v in G.edges():
+    x1, y1, x2, y2 = nodes[u]['x'], nodes[u]['y'], nodes[v]['x'], nodes[v]['y']
+    plt.plot([x1,x2], [y1,y2], color='lightgray', zorder=1)
+# MST bold with distances
+for u, v in mst.edges():
+    x1, y1, x2, y2 = nodes[u]['x'], nodes[u]['y'], nodes[v]['x'], nodes[v]['y']
+    midx, midy = (x1+x2)/2, (y1+y2)/2
+    dist = math.dist((x1,y1),(x2,y2))
+    plt.plot([x1,x2],[y1,y2], color='black', linewidth=3)
+    plt.text(midx, midy+0.3, f"{dist:.2f}", color='darkorange', fontsize=9)
+# Nodes
+for i, p in nodes.items():
+    color = 'limegreen' if i == 0 else 'lavender'
+    plt.scatter(p['x'], p['y'], c=color, s=300, edgecolor='black')
+    plt.text(p['x'], p['y']+0.5, f"{i}", ha='center', fontweight='bold')
+    plt.text(p['x']+0.4, p['y']+0.9, f"d={p['demand']}", fontsize=9)
+plt.axis('off')
+plt.tight_layout()
+plt.show()
+
+# =====================================================
+# (c) Final Routes (Best)
+# =====================================================
+plt.figure(figsize=(8,6))
+plt.title("(c) Final routes generated by ParMDS", fontsize=12, fontweight='bold')
+colors = ['orange', 'cornflowerblue', 'green']
+for i, route in enumerate(best['routes']):
+    edges = list(zip(route[:-1], route[1:]))
+    for a, b in edges:
+        x1, y1, x2, y2 = nodes[a]['x'], nodes[a]['y'], nodes[b]['x'], nodes[b]['y']
+        plt.plot([x1, x2], [y1, y2], color=colors[i % len(colors)], linewidth=3)
+for i, p in nodes.items():
+    color = 'limegreen' if i == 0 else 'lavender'
+    plt.scatter(p['x'], p['y'], c=color, s=300, edgecolor='black')
+    plt.text(p['x'], p['y']+0.5, f"{i}", ha='center', fontweight='bold')
+plt.text(1, 12, f"Best Cost: {best['cost']:.2f}", fontsize=11)
+plt.axis('off')
+plt.tight_layout()
+plt.show()
+
+# =====================================================
+# (d) All DFS Trees (in one plot)
+# =====================================================
+fig, axes = plt.subplots(1, len(results), figsize=(14, 4))
+for k, ax in enumerate(axes):
+    res = results[k]
+    adj = randomized_adj_lists(mst)
+    T = nx.DiGraph()
+    for u in adj:
+        for v in adj[u]:
+            T.add_edge(u, v)
+    pos = nx.spring_layout(T, seed=k)
+    nx.draw(T, pos, ax=ax, with_labels=True, node_color='lightblue',
+            node_size=800, font_weight='bold', arrows=False)
+    nx.draw_networkx_nodes(T, pos, nodelist=[0], node_color='limegreen', ax=ax)
+    ax.set_title(f"(d{k+1}) π={res['pi']}\nCost={res['cost']:.2f}", fontsize=8)
+    ax.axis('off')
+plt.suptitle("Multiple DFS traversals and their resulting permutations", fontsize=13, fontweight='bold')
+plt.tight_layout()
+plt.show()
