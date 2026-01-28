@@ -41,6 +41,8 @@ class Params {
   //~ short nThreads;
 };
 
+
+
 class Edge {
   public:
   node_t to;
@@ -220,6 +222,40 @@ void VRP::print() {
   }
 }
 
+void printOutput(const VRP &vrp, const std::vector<std::vector<node_t>> &final_routes) {
+  weight_t total_cost = 0.0;
+
+  cout<<"No of routes: "<<final_routes.size()<<endl;
+
+  for (unsigned ii = 0; ii < final_routes.size(); ++ii) {
+    std::cout << "Route #" << ii + 1 << ":";
+    for (unsigned jj = 0; jj < final_routes[ii].size(); ++jj) {
+      std::cout << " " << final_routes[ii][jj];
+    }
+    std::cout << '\n';
+  }
+
+  for (unsigned ii = 0; ii < final_routes.size(); ++ii) {
+    weight_t curr_route_cost = 0;
+
+    curr_route_cost += vrp.get_dist(DEPOT, final_routes[ii][0]);
+    cout<< "From 0 to " << final_routes[ii][0] << ": " << vrp.get_dist(DEPOT, final_routes[ii][0]) << endl;
+
+    for (unsigned jj = 1; jj < final_routes[ii].size(); ++jj) {
+      curr_route_cost += vrp.get_dist(final_routes[ii][jj - 1], final_routes[ii][jj]);
+
+      cout<< "From " << final_routes[ii][jj - 1] << " to " << final_routes[ii][jj] << ": " << vrp.get_dist(final_routes[ii][jj - 1], final_routes[ii][jj]) << endl;
+
+    }
+    curr_route_cost += vrp.get_dist(DEPOT, final_routes[ii][final_routes[ii].size() - 1]);
+    cout<< "From " << final_routes[ii][final_routes[ii].size() - 1] << " to 0: " << vrp.get_dist(DEPOT, final_routes[ii][final_routes[ii].size() - 1]) << endl;
+
+    total_cost += curr_route_cost;
+  }
+
+  std::cout << "Cost " << total_cost << std::endl;
+}
+
 // Prims's MST using STL set
 std::vector<std::vector<Edge>>
 PrimsAlgo(const VRP &vrp, std::vector<std::vector<Edge>> &graph) {
@@ -261,6 +297,11 @@ PrimsAlgo(const VRP &vrp, std::vector<std::vector<Edge>> &graph) {
         toEdges[E.to] = where;
       }
     }
+  }
+
+  //print the edge
+  for (node_t v = 0; v < N; ++v) {
+    cout<< toEdges[v] << " - " << v << endl;
   }
 
   cerr << "edge_cost: " << edge_cost << " ";
@@ -356,7 +397,11 @@ convertToVrpRoutes(const VRP &vrp, const std::vector<node_t> &singleRoute) {
     }
   }
   routes.push_back(aRoute);
+
+  printOutput(vrp, routes);
+
   return routes;
+
 }
 
 // Cost of a CVRP Solution!.
@@ -380,34 +425,7 @@ weight_t calRouteValue(const VRP &vrp, const std::vector<node_t> &aRoute, node_t
 // ...
 // Route #k: n-1 n
 //
-void printOutput(const VRP &vrp, const std::vector<std::vector<node_t>> &final_routes) {
-  weight_t total_cost = 0.0;
 
-  cout<<"No of routes: "<<final_routes.size()<<endl;
-
-  for (unsigned ii = 0; ii < final_routes.size(); ++ii) {
-    std::cout << "Route #" << ii + 1 << ":";
-    for (unsigned jj = 0; jj < final_routes[ii].size(); ++jj) {
-      std::cout << " " << final_routes[ii][jj];
-    }
-    std::cout << '\n';
-  }
-
-  for (unsigned ii = 0; ii < final_routes.size(); ++ii) {
-    weight_t curr_route_cost = 0;
-
-    curr_route_cost += vrp.get_dist(DEPOT, final_routes[ii][0]);
-
-    for (unsigned jj = 1; jj < final_routes[ii].size(); ++jj) {
-      curr_route_cost += vrp.get_dist(final_routes[ii][jj - 1], final_routes[ii][jj]);
-    }
-    curr_route_cost += vrp.get_dist(DEPOT, final_routes[ii][final_routes[ii].size() - 1]);
-
-    total_cost += curr_route_cost;
-  }
-
-  std::cout << "Cost " << total_cost << std::endl;
-}
 
 /* Verify tour require tour starting from depot eg 0 1 2 3 */
 bool verify_tour(const VRP &vrp,const std::vector<node_t> &tour, node_t ncities) {
@@ -840,7 +858,7 @@ int main(int argc, char *argv[]) {
   weight_t min_cost_after_one_iteration = minCost;
   auto time_till_one_iteration = (double)((chrono::high_resolution_clock::now() - start).count() * 1.E-9);
 
-  for (int i = 1; i < 100000; ++i) {
+  for (int i = 1; i < 10; ++i) {
     // RANDOMIZE THE ADJ LIST OF MST
     for (auto &list : mstG) {
       std::shuffle(list.begin(), list.end(), std::default_random_engine(rand()));

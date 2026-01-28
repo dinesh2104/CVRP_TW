@@ -250,7 +250,7 @@ def main():
     """Main function to solve the VRPTW instance from file"""
     import sys
     #TODO: Change default filename to a valid Solomon instance file
-    filename = "toy2.txt"
+    filename = "Report/ch1_imgdata.txt"
     
     if len(sys.argv) > 1:
         filename = sys.argv[1]
