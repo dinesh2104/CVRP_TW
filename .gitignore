@@ -1,6 +1,8 @@
 # Ignore tool and data folders
 vtool/
 outputs/
+outputs1/
+outputs2/
 vtools/
 __pycache__/
 Utility/

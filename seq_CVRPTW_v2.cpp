@@ -360,45 +360,55 @@ convertToVrpRoutes(const VRP &vrp, const std::vector<node_t> &singleRoute) {
   std::vector<node_t> aRoute;
   tw_t process_time=0;
 
-  // if(flag==1){
-    // for(auto v:singleRoute){
-    //   cout<<v<<" ";
-    // }
-    // cout<<endl;
-  //   flag=0;
+  
+  // for(auto v:singleRoute){
+  //   cout<<v<<" ";
   // }
-  node_t prev=0;
+  // cout<<endl;
 
-  for (auto v : singleRoute) {
-    if (v == 0)
-      continue;
-    process_time+=(vrp.get_dist(prev,v)); // from prev to v
-    //cout<<process_time<<" "<<v<<" "<<((vrp.get_dist(prev,v))<<" "<<vrp.node[v].earlyTime<<" "<<vrp.node[v].latestTime<<endl;
-    if (residueCap - vrp.node[v].demand >= 0 && process_time<=vrp.node[v].latestTime) {  // can add to current route
-      aRoute.push_back(v);
-      residueCap = residueCap - vrp.node[v].demand;
-      process_time=max(process_time,vrp.node[v].earlyTime) + vrp.node[v].serviceTime;
-      prev=v;
-      //cout<<"if"<<endl;
-    } else {  //new route
-      routes.push_back(aRoute);
-      aRoute.clear();
-      process_time=(vrp.get_dist(0,v)); // from depot to v
-      if(process_time>vrp.node[v].latestTime){
-        std::cerr<<"Infeasible due to time window"<<std::endl;
-        exit(1);
+  int size_singleRoute=singleRoute.size();
+  vector<bool> visited(size_singleRoute,false);
+  
+  int flag=1;
+  while(flag==1){
+    node_t prev=0;
+    flag=0;
+    aRoute.clear();
+    residueCap = vCapacity;
+    process_time=0;
+    for (auto v : singleRoute) {
+      if (v == 0)
+        continue;
+      if(visited[v]==true){
+        continue;
       }
-      aRoute.push_back(v);
-      residueCap = vCapacity - vrp.node[v].demand;
-      //cout<<"Processing time before max: "<<process_time<<endl;
-      process_time=max(process_time,vrp.node[v].earlyTime) + vrp.node[v].serviceTime;
-      prev=v;
-      //cout<<"else"<<endl;
+      if(residueCap - vrp.node[v].demand >= 0 && process_time+vrp.get_dist(prev,v) <= vrp.node[v].latestTime) {  // can add to current route
+        aRoute.push_back(v);
+        residueCap = residueCap - vrp.node[v].demand;
+        process_time+=vrp.get_dist(prev,v);
+        process_time=max(process_time,vrp.node[v].earlyTime) + vrp.node[v].serviceTime;
+        prev=v;
+        visited[v]=true;
+        flag=1;
+      }
+    }
+    if(aRoute.size()>0){
+      routes.push_back(aRoute);
+    }
+
+  }
+  
+  //printOutput(vrp, routes);
+  // Checking whether customer is served or not
+  int served_count=0;
+  for(int i=1;i<size_singleRoute;i++){
+    if(visited[i]==true){
+      served_count++;
     }
   }
-  routes.push_back(aRoute);
-
-  //printOutput(vrp, routes);
+  if(served_count!=size_singleRoute-1){
+    std::cerr<<"Some customers are not served in the solution!"<<std::endl;
+  }
 
   return routes;
 
@@ -864,10 +874,7 @@ int main(int argc, char *argv[]) {
       std::shuffle(list.begin(), list.end(), std::default_random_engine(rand()));
     }   
 
-    //reset  // for(auto v:singleRoute){
-    //   cout<<v<<" ";
-    // }
-    // cout<<endl;
+    //reset
     singleRoute.clear();
 
     std::vector<bool> visited(mstG.size(), false);
@@ -919,7 +926,6 @@ int main(int argc, char *argv[]) {
                               << time_till_super_loop    << " "
                               << total_time;
     cerr << " Vehicle_Used"<<" " << postRoutes.size();
-
     cerr << " VALID\n";
   }else
   {
