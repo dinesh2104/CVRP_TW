@@ -24,7 +24,7 @@ using weight_t = double;
 using demand_t = double;
 using node_t = int;  // let's keep as int than unsigned. -1 is init. nodes ids 0 to n-1
 
-using tw_t=unsigned int; // time window not used in this code.
+using tw_t=unsigned int; // time window.
 
 const node_t DEPOT = 0;  // CVRP depot is always assumed to be zero.
 
