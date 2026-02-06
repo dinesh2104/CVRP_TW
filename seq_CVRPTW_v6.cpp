@@ -200,171 +200,7 @@ void VRP::print() {
   }
 }
 
-//k-medoid clustering............
-
-vector<vector<int>> clustering_kmedoid(VRP vrp,int k){
-  int n=vrp.getSize()-1;
-  vector<int> medoids_id;
-  // Randomly select k medoids
-  random_device rd;
-  mt19937 gen(rd());
-  uniform_int_distribution<> dis(1, n); // assuming customer IDs are from 1 to n
-
-  while(medoids_id.size()<k){
-    int m_id=dis(gen);
-    if(find(medoids_id.begin(),medoids_id.end(),m_id)==medoids_id.end()){
-      medoids_id.push_back(m_id);
-    }
-  }
-
-  cout<<"Initial Medoids: ";
-  for(auto m:medoids_id){
-    cout<<m<<" ";
-  }
-  cout<<endl;
-
-  bool changed=true;
-  vector<vector<int>> clusters(k);
-  while(changed){
-    changed=false;
-    // Assignment Step
-    clusters.clear();
-    clusters.resize(k);
-    for(int i=1;i<=n;i++){
-      weight_t min_dist=DBL_MAX;
-      int assigned_cluster=-1;
-      for(int j=0;j<k;j++){
-        weight_t dist=vrp.get_dist(i,medoids_id[j]);
-        if(dist<min_dist){
-          min_dist=dist;
-          assigned_cluster=j;
-        }
-      }
-      clusters[assigned_cluster].push_back(i);
-    }
-
-    // Update Step
-    for(int j=0;j<k;j++){
-      weight_t min_total_dist=DBL_MAX;
-      int new_medoid=-1;
-      for(auto candidate:clusters[j]){
-        weight_t total_dist=0.0;
-        for(auto point:clusters[j]){
-          total_dist+=vrp.get_dist(candidate,point);
-        }
-        if(total_dist<min_total_dist){
-          min_total_dist=total_dist;
-          new_medoid=candidate;
-        }
-      }
-      if(new_medoid!=medoids_id[j]){
-        medoids_id[j]=new_medoid;
-        changed=true;
-      }
-    }
-  }
-
-  // Output final clusters
-  for(int j=0;j<k;j++){
-    cout<<"Cluster "<<j+1<<" (Medoid: "<<medoids_id[j]<<"): ";
-    for(auto customer:clusters[j]){
-      cout<<customer<<" ";
-    }
-    cout<<endl;
-  }
-  return clusters;
-}
-
-struct RouteNode {
-  node_t customer_id;
-  tw_t processing_time;
-};
-
-// Construction function........
-vector<vector<node_t>> constructRoutes(VRP &vrp,vector<vector<int>> &clusters,int rcl){
-  vector<vector<node_t>> final_routes;
-  vector<node_t> current_route;
-
-  int current_capacity = vrp.getCapacity();
-  tw_t current_process_time = 0;
-  int k = 0;
-
-  while(k < clusters.size()){
-    // If no customers left in this cluster → move to next
-    if(clusters[k].empty()){
-      if(!current_route.empty()){
-        final_routes.push_back(current_route);
-        current_route.clear();
-        current_capacity = vrp.getCapacity();
-        current_process_time = 0;
-      }
-      k++;
-      continue;
-    }
-
-    // Build candidate list with processing times
-    vector<RouteNode> route_nodes;
-    for(node_t cust : clusters[k]){
-      tw_t processing_time;
-
-      if(current_route.empty()){
-        processing_time = max((tw_t)vrp.get_dist(DEPOT, cust),vrp.node[cust].earlyTime);
-      }
-      else{
-        node_t prev = current_route.back();
-        processing_time = current_process_time + vrp.get_dist(prev, cust);
-        processing_time = max(processing_time,vrp.node[cust].earlyTime);
-      }
-
-      route_nodes.push_back({cust, processing_time});
-    }
-        // Safety check
-    if(route_nodes.empty()){
-      k++;
-      continue;
-    }
-
-        // Greedy ordering
-    sort(route_nodes.begin(), route_nodes.end(),
-            [](const RouteNode &a, const RouteNode &b){
-            return a.processing_time < b.processing_time;
-            });
-
-        // Build RCL
-    int rcl_size = min(rcl, (int)route_nodes.size());
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> dis(0, rcl_size - 1);
-    int selected_index = dis(gen);
-
-    node_t selected_customer = route_nodes[selected_index].customer_id;
-    tw_t selected_time = route_nodes[selected_index].processing_time;
-
-        // Feasibility check
-    if(current_capacity >= vrp.node[selected_customer].demand &&
-      selected_time <= vrp.node[selected_customer].latestTime){
-
-            // Assign customer
-      current_route.push_back(selected_customer);
-      current_capacity -= vrp.node[selected_customer].demand;
-      current_process_time =selected_time + vrp.node[selected_customer].serviceTime;
-            // Remove customer from current cluster
-      clusters[k].erase(remove(clusters[k].begin(), clusters[k].end(), selected_customer),clusters[k].end());
-    }
-    else{
-            // Close current route and start a new one
-      if(!current_route.empty()){
-        final_routes.push_back(current_route);
-      }
-      current_route.clear();
-      current_capacity = vrp.getCapacity();
-      current_process_time = 0;
-    }
-    //cout<<"Node added to route: "<<selected_customer<<" k="<<k<<endl;
-    //break; 
-  }
-  return final_routes;
-}
+// Helper functions for route calculations
 
 double calculate_route_distance(const VRP &vrp,const std::vector<node_t> &route) {
   double total_distance=0.0;
@@ -430,9 +266,6 @@ bool verify_single_route(const VRP &vrp,const std::vector<node_t> &route) {
   return true;
 }
 
-// Post-Optimization function ..............
-
-
 // Print the output routes.
 
 void print_routes(const std::vector<std::vector<node_t>> &routes) {
@@ -447,6 +280,8 @@ void print_routes(const std::vector<std::vector<node_t>> &routes) {
 }
 
 
+
+
 int main(int argc, char *argv[]) {
 VRP vrp;
   if (argc < 2) {
@@ -457,34 +292,20 @@ VRP vrp;
 
   vrp.read(argv[1]);
   vrp.cal_graph_dist();
-  //vrp.print();
-  // Todo: Clustering the customers based on k-medoid
-  vector<vector<int>> clusters = clustering_kmedoid(vrp, 5); // 5 clusters
-
-  // Todo: Construct routes within each cluster.
   
-  vector<vector<int>> clustor_cpy=clusters; // copy of clusters for route construction
-  vector<vector<node_t>> final_routes=constructRoutes(vrp,clustor_cpy,3);
-  int route_cost=calculate_total_cost(vrp,final_routes);
+  vrp.print();
 
-  int min_cost=route_cost;
-  vector<vector<node_t>> best_routes=final_routes;
 
-  for(int i=0;i<1000;i++){
-    clustor_cpy=clusters; // reset clusters
-    vector<vector<node_t>> new_routes=constructRoutes(vrp,clustor_cpy,3);
-    int new_cost=calculate_total_cost(vrp,new_routes);
-    if(new_cost<min_cost && verify_route(vrp,new_routes)){
-      min_cost=new_cost;
-      best_routes=new_routes;
-    }
-  }
 
-  //printing final routes
-  cout<<"Best Cost: "<<min_cost<<endl;
-  cout<<"Verifying best routes: "<<(verify_route(vrp,best_routes)?"Valid":"Invalid")<<endl;
-  cout<<"Number of routes: "<<best_routes.size()<<endl;
-  print_routes(best_routes);
+  // if(verify_route(vrp,best_routes)){
+  //   cerr<<"File: "<<argv[1]<<" ";
+  //   cerr<<"Pre-processing_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(pre_end - pre_start).count()*1.E-9)<<" s ";
+  //   cerr<<"Route_Construction_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(mid_end - mid_start).count()*1.E-9)<<" s ";
+  //   cerr<<"Total_Cost: "<<min_cost<<" ";
+  //   cerr<<"Total_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(total_end - total_start).count()*1.E-9)<<" s ";
+  //   cerr<<"Vehicle_Used: "<<best_routes.size()<<" ";
+  //   cerr<<"VALID"<<endl;
+  // }
 
   return 0;
 }

@@ -1,26 +1,16 @@
 #!/bin/bash
 
-mkdir -p outputs1
-mkdir -p outputs2
+val=2.1
 
-make build
+mkdir -p outputs$val
+make build$val
 
-result_file="outputs1/result.sol"
-
-for infile in inputs/*; do
-    filename=$(basename "$infile")
-    outfile="outputs1/${filename}.out"
-    ./seq.out "$infile" > "$outfile" 2>> "$result_file"
-    echo "Processed $infile -> $outfile"
-done
-
-make build2
-
-result_file="outputs2/result.sol"
+result_file="outputs$val/result.sol"
 
 for infile in inputs/*; do
     filename=$(basename "$infile")
-    outfile="outputs2/${filename}.out"
+    outfile="outputs$val/${filename}.out"
     ./seq.out "$infile" > "$outfile" 2>> "$result_file"
     echo "Processed $infile -> $outfile"
 done
+echo "All files processed. Results are in outputs$val/result.sol"

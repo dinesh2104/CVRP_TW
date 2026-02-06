@@ -3,6 +3,7 @@ vtool/
 outputs/
 outputs1/
 outputs2/
+outputs*/
 vtools/
 __pycache__/
 Utility/

@@ -13,8 +13,24 @@ test2:
 	$(CXX) seq_CVRPTW_v2.cpp -o seq.out
 	./seq.out r102.txt
 
+test2.1:
+	$(CXX) seq_CVRPTW_v2.1.cpp -o seq.out
+	./seq.out r102.txt
+
 test3:
 	$(CXX) seq_CVRPTW_v3.cpp -o seq.out
+	./seq.out r102.txt
+
+test4:
+	$(CXX) seq_CVRPTW_v4.cpp -o seq.out
+	./seq.out r102.txt
+
+test5:
+	$(CXX) seq_CVRPTW_v5.cpp -o seq.out
+	./seq.out r102.txt
+
+test6:
+	$(CXX) seq_CVRPTW_v6.cpp -o seq.out
 	./seq.out r102.txt
 
 build:
@@ -22,6 +38,18 @@ build:
 
 build2:
 	$(CXX) seq_CVRPTW_v2.cpp -o seq.out
+
+build2.1:
+	$(CXX) seq_CVRPTW_v2.1.cpp -o seq.out
+
+build3:
+	$(CXX) seq_CVRPTW_v3.cpp -o seq3.out
+
+build4:
+	$(CXX) seq_CVRPTW_v4.cpp -o seq.out
+
+build5:
+	$(CXX) seq_CVRPTW_v5.cpp -o seq.out
 
 # Clean
 clean:
