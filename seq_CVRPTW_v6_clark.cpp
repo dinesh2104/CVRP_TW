@@ -277,9 +277,121 @@ void print_routes(const std::vector<std::vector<node_t>> &routes) {
     }
     cout << endl;
   }
+
 }
 
+// Main functions
 
+struct Saving {
+  node_t i, j;
+  double value;
+};
+
+vector<vector<node_t>> clarke_wright_cvrptw(const VRP &vrp) {
+
+  size_t N = vrp.getSize();
+
+  // --- Step 1: initial routes ---
+  vector<vector<node_t>> routes;
+  for(node_t i = 1; i < N; i++) {   // skip depot
+    routes.push_back({i});
+  }
+
+  bool merged = true;
+
+  // --- Step 2: greedy merge loop ---
+  while(merged) {
+    merged = false;
+
+    double best_saving = -1e9;
+    int best_ri = -1, best_rj = -1;
+    vector<node_t> best_route;
+
+    // --- recompute savings ---
+    for(size_t ri = 0; ri < routes.size(); ri++) {
+      if(routes[ri].empty()) continue;
+
+      for(size_t rj = ri + 1; rj < routes.size(); rj++) {
+        if(routes[rj].empty()) continue;
+
+        auto &A = routes[ri];
+        auto &B = routes[rj];
+
+        node_t A_start = A.front();
+        node_t A_end   = A.back();
+        node_t B_start = B.front();
+        node_t B_end   = B.back();
+
+        // ----- Try A -> B -----
+        {
+          vector<node_t> merged_route = A;
+          merged_route.insert(merged_route.end(), B.begin(), B.end());
+
+          if(verify_single_route(vrp, merged_route)) {
+            double saving =
+              vrp.get_dist(DEPOT, A_end) +
+              vrp.get_dist(DEPOT, B_start) -
+              vrp.get_dist(A_end, B_start);
+
+            if(saving > best_saving) {
+              best_saving = saving;
+              best_ri = ri;
+              best_rj = rj;
+              best_route = merged_route;
+            }
+          }
+        }
+
+        // ----- Try B -> A -----
+        {
+          vector<node_t> merged_route = B;
+          merged_route.insert(merged_route.end(), A.begin(), A.end());
+
+          if(verify_single_route(vrp, merged_route)) {
+            double saving =
+              vrp.get_dist(DEPOT, B_end) +
+              vrp.get_dist(DEPOT, A_start) -
+              vrp.get_dist(B_end, A_start);
+
+            if(saving > best_saving) {
+              best_saving = saving;
+              best_ri = ri;
+              best_rj = rj;
+              best_route = merged_route;
+            }
+          }
+        }
+      }
+    }
+
+    // --- Apply best merge ---
+    if(best_saving > 0 && best_ri != -1) {
+      routes[best_ri] = best_route;
+      routes[best_rj].clear();
+      merged = true;
+    }
+    //print intermediate routes after each merge
+    cout << "Intermediate Routes after merge:" << endl;
+    for (size_t i = 0; i < routes.size(); ++i)
+    {
+      cout << "Route #" << i + 1 << ": ";
+      for (size_t j = 0; j < routes[i].size(); ++j)
+      {
+        cout << routes[i][j] << " ";
+      }
+      cout << endl;
+    }
+  }
+
+  // --- Step 3: remove empty routes ---
+  vector<vector<node_t>> final_routes;
+  for(auto &r : routes) {
+    if(!r.empty())
+      final_routes.push_back(r);
+  }
+
+  return final_routes;
+}
 
 
 int main(int argc, char *argv[]) {
@@ -293,7 +405,20 @@ VRP vrp;
   vrp.read(argv[1]);
   vrp.cal_graph_dist();
   
-  vrp.print();
+  // Implementing the Clark and Wright Savings Algorithm for CVRPTW
+
+  auto routes = clarke_wright_cvrptw(vrp);
+
+  if(verify_route(vrp, routes)) {
+    print_routes(routes);
+    cout << "Total Cost: "
+        << calculate_total_cost(vrp, routes)
+        << endl;
+  } else {
+    cout << "INVALID SOLUTION" << endl;
+  }
+
+
 
 
 

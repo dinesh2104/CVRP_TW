@@ -895,6 +895,15 @@ int main(int argc, char *argv[]) {
 
   clock_t post_st=clock();
 
+  // printing the minRoute
+  cout<< "Initial Route before post-processing: "<<endl;
+  for (size_t i = 0; i < minRoute.size(); ++i) {
+    for (size_t j = 0; j < minRoute[i].size(); ++j) {
+      cout << minRoute[i][j]<<" ";
+    }
+    cout << '\n';
+  }
+
   auto postRoutes = postProcessIt(vrp, minRoute, minCost);
   //auto postRoutes = minRoute;
 

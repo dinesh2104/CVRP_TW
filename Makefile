@@ -18,8 +18,8 @@ test2.1:
 	./seq.out r102.txt
 
 test3:
-	$(CXX) seq_CVRPTW_v3.cpp -o seq.out
-	./seq.out r102.txt
+	$(CXX) seq_CVRPTW_v3_cluster.cpp -o seq.out
+	./seq.out RC2_10_2.txt
 
 test4:
 	$(CXX) seq_CVRPTW_v4.cpp -o seq.out
@@ -31,7 +31,7 @@ test5:
 
 test6:
 	$(CXX) seq_CVRPTW_v6.cpp -o seq.out
-	./seq.out r102.txt
+	./seq.out toy.txt
 
 build:
 	$(CXX) seq_CVRPTW.cpp -o seq.out
@@ -43,7 +43,7 @@ build2.1:
 	$(CXX) seq_CVRPTW_v2.1.cpp -o seq.out
 
 build3:
-	$(CXX) seq_CVRPTW_v3.cpp -o seq3.out
+	$(CXX) seq_CVRPTW_v3_cluster.cpp -o seq.out
 
 build4:
 	$(CXX) seq_CVRPTW_v4.cpp -o seq.out

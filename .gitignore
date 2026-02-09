@@ -10,6 +10,7 @@ Utility/
 tinput/
 toutput/
 mrun.sh
+testcase/
 
 # Ignore GPU build outputs
 GPU_code/outputs/
