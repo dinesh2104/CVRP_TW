@@ -45,6 +45,9 @@ build2.1:
 build3:
 	$(CXX) seq_CVRPTW_v3_cluster.cpp -o seq.out
 
+build3.1:
+	$(CXX) seq_CVRPTW_v3.1_cluster.cpp -o seq.out
+
 build4:
 	$(CXX) seq_CVRPTW_v4.cpp -o seq.out
 

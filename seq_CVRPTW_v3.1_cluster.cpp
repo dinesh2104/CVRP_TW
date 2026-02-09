@@ -342,35 +342,32 @@ vector<vector<node_t>> constructRoutes(VRP &vrp,vector<vector<int>> &clusters,in
             });
 
         // Build RCL
-    int rcl_size = min(rcl, (int)route_nodes.size());
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> dis(0, rcl_size - 1);
-    int selected_index = dis(gen);
-
-    node_t selected_customer = route_nodes[selected_index].customer_id;
-    tw_t selected_time = route_nodes[selected_index].processing_time;
-
-        // Feasibility check
-    if(current_capacity >= vrp.node[selected_customer].demand &&
-      selected_time <= vrp.node[selected_customer].latestTime){
-
+    int flag=0;
+    for(auto &node : route_nodes){
+      int selected_customer=node.customer_id;
+      int prev_node=current_route.empty() ? DEPOT : current_route.back();
+      tw_t selected_time=current_process_time + vrp.get_dist(prev_node, selected_customer);
+      selected_time = max(selected_time, vrp.node[selected_customer].earlyTime);
+      if(current_capacity >= vrp.node[selected_customer].demand &&
+        selected_time <= vrp.node[selected_customer].latestTime){
             // Assign customer
-      current_route.push_back(selected_customer);
-      current_capacity -= vrp.node[selected_customer].demand;
-      current_process_time =selected_time + vrp.node[selected_customer].serviceTime;
-            // Remove customer from current cluster
-      clusters[k].erase(remove(clusters[k].begin(), clusters[k].end(), selected_customer),clusters[k].end());
+        flag=1;
+        current_route.push_back(selected_customer);
+        current_capacity -= vrp.node[selected_customer].demand;
+        current_process_time =selected_time + vrp.node[selected_customer].serviceTime;
+              // Remove customer from current cluster
+        clusters[k].erase(remove(clusters[k].begin(), clusters[k].end(), selected_customer),clusters[k].end());
+      }
     }
-    else{
-            // Close current route and start a new one
+    if(flag==0){ // No customer could be added to current route, start a new route
       if(!current_route.empty()){
         final_routes.push_back(current_route);
+        current_route.clear();
+        current_capacity = vrp.getCapacity();
+        current_process_time = 0;
       }
-      current_route.clear();
-      current_capacity = vrp.getCapacity();
-      current_process_time = 0;
     }
+    route_nodes.clear();
     //cout<<"Node added to route: "<<selected_customer<<" k="<<k<<endl;
     //break; 
   }
@@ -792,17 +789,21 @@ VRP vrp;
   int route_cost=calculate_total_cost(vrp,final_routes);
 
   int min_cost=route_cost;
+  int min_cost1=route_cost;
   vector<vector<node_t>> best_routes=final_routes;
+  
 
-  for(int i=0;i<1000;i++){
-    clustor_cpy=clusters; // reset clusters
-    vector<vector<node_t>> new_routes=constructRoutes(vrp,clustor_cpy,3);
-    int new_cost=calculate_total_cost(vrp,new_routes);
-    if(new_cost<min_cost && verify_route(vrp,new_routes)){
-      min_cost=new_cost;
-      best_routes=new_routes;
-    }
-  }
+  // for(int i=0;i<1000;i++){
+  //   clustor_cpy=clusters; // reset clusters
+  //   vector<vector<node_t>> new_routes=constructRoutes(vrp,clustor_cpy,3);
+  //   int new_cost=calculate_total_cost(vrp,new_routes);
+  //   if(new_cost<min_cost && verify_route(vrp,new_routes)){
+  //     min_cost=new_cost;
+  //     best_routes=new_routes;
+  //   }
+  // }
+
+  // int min_cost2=calculate_total_cost(vrp,best_routes);
 
   //printing the best routes after construction
   // cout<<"Route before post-processing: "<<endl;
@@ -818,10 +819,10 @@ VRP vrp;
   chrono::high_resolution_clock::time_point total_end = chrono::high_resolution_clock::now();
   
   // TODO: Post-Optimization of routes.
-  // weight_t post_optimized_cost=min_cost;
-  // best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
+  weight_t post_optimized_cost=min_cost;
+  best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
 
-  // min_cost=calculate_total_cost(vrp,best_routes);
+  min_cost=calculate_total_cost(vrp,best_routes);
 
 
   //printing final routes
@@ -834,7 +835,8 @@ VRP vrp;
     cerr<<"File: "<<argv[1]<<" ";
     cerr<<"Pre-processing_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(pre_end - pre_start).count()*1.E-9)<<" s ";
     cerr<<"Route_Construction_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(mid_end - mid_start).count()*1.E-9)<<" s ";
-    cerr<<"Total_Cost: "<<min_cost<<" ";
+    cerr<<"Total_Cost1: "<<min_cost1<<" ";
+    cerr<<"Total_Cost2: "<<min_cost<<" ";
     cerr<<"Total_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(total_end - total_start).count()*1.E-9)<<" s ";
     cerr<<"Vehicle_Used: "<<best_routes.size()<<" ";
     cerr<<"route_length: "<<max_length_of_route(best_routes)<<" ";

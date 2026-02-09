@@ -1,11 +1,11 @@
 #!/bin/bash
 
-val=3
+val=3.1
 
 mkdir -p outputs$val
 make build$val
 
-result_file="outputs$val/result.sol"
+result_file="outputs$val/result.csv"
 
 for infile in testcase/*; do
     filename=$(basename "$infile")
