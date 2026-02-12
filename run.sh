@@ -1,6 +1,6 @@
 #!/bin/bash
 
-val=3.1
+val=2
 
 mkdir -p outputs$val
 make build$val

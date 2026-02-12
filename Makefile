@@ -30,14 +30,14 @@ test5:
 	./seq.out r102.txt
 
 test6:
-	$(CXX) seq_CVRPTW_v6.cpp -o seq.out
+	$(CXX) seq_CVRPTW_v6_clark.cpp -o seq.out
 	./seq.out toy.txt
 
-build:
+build1:
 	$(CXX) seq_CVRPTW.cpp -o seq.out
 
 build2:
-	$(CXX) seq_CVRPTW_v2.cpp -o seq.out
+	$(CXX) seq_CVRPTW_v2_addFeasibleCust.cpp -o seq.out
 
 build2.1:
 	$(CXX) seq_CVRPTW_v2.1.cpp -o seq.out
@@ -53,6 +53,9 @@ build4:
 
 build5:
 	$(CXX) seq_CVRPTW_v5.cpp -o seq.out
+
+build6:
+	$(CXX) seq_CVRPTW_v6_clark.cpp -o seq.out
 
 # Clean
 clean:

@@ -818,10 +818,10 @@ VRP vrp;
   chrono::high_resolution_clock::time_point total_end = chrono::high_resolution_clock::now();
   
   // TODO: Post-Optimization of routes.
-  // weight_t post_optimized_cost=min_cost;
-  // best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
+  weight_t post_optimized_cost=min_cost;
+  best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
 
-  // min_cost=calculate_total_cost(vrp,best_routes);
+  min_cost=calculate_total_cost(vrp,best_routes);
 
 
   //printing final routes
