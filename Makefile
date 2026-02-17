@@ -33,6 +33,10 @@ test6:
 	$(CXX) seq_CVRPTW_v6_clark.cpp -o seq.out
 	./seq.out toy.txt
 
+test7:
+	$(CXX) seq_CVRPTW_v7_clarkwithTW.cpp -o seq.out
+	./seq.out r102.txt
+
 build1:
 	$(CXX) seq_CVRPTW.cpp -o seq.out
 
@@ -57,7 +61,10 @@ build5:
 build6:
 	$(CXX) seq_CVRPTW_v6_clark.cpp -o seq.out
 
+build7:
+	$(CXX) seq_CVRPTW_v7_clarkwithTW.cpp -o seq.out
+
 # Clean
 clean:
 	rm -f *.out 
-	rm -rf outputs
+	rm -rf outputs*

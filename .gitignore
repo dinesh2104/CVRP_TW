@@ -11,6 +11,7 @@ tinput/
 toutput/
 mrun.sh
 testcase/
+snap/
 
 # Ignore GPU build outputs
 GPU_code/outputs/
