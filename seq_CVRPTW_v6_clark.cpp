@@ -329,10 +329,12 @@ vector<vector<node_t>> clarke_wright_cvrptw(const VRP &vrp)
     {
         for (node_t j = i + 1; j < N; j++)
         {
-            weight_t s =
-                vrp.get_dist(DEPOT, i) +
-                vrp.get_dist(DEPOT, j) -
-                vrp.get_dist(i, j);
+            // weight_t s =
+            //     vrp.get_dist(DEPOT, i) +
+            //     vrp.get_dist(DEPOT, j) -
+            //     vrp.get_dist(i, j);
+        
+            weight_t s= -vrp.get_dist(i,j);
 
             savings.push_back({i, j, s});
         }
@@ -416,8 +418,9 @@ vector<vector<node_t>> clarke_wright_cvrptw(const VRP &vrp)
         save_routes_snapshot(routes, "snap/step_" + to_string(step++) + ".csv");
 
         // print the routes after each merge for debugging
-        // cout << "Merged Route: " << i << " and " << j << " -> ";
-        // print_routes(routes);  
+        cout << "Merged Route: " << i << " and " << j << " | Savings: " << s.value << endl;
+        //cout<<endl;
+        //print_routes(routes);  
     }
 
     // ---- Collect final routes ----

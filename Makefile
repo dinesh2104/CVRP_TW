@@ -31,11 +31,11 @@ test5:
 
 test6:
 	$(CXX) seq_CVRPTW_v6_clark.cpp -o seq.out
-	./seq.out toy.txt
+	./seq.out c_50.txt
 
 test7:
 	$(CXX) seq_CVRPTW_v7_clarkwithTW.cpp -o seq.out
-	./seq.out r102.txt
+	./seq.out c_50.txt
 
 build1:
 	$(CXX) seq_CVRPTW.cpp -o seq.out

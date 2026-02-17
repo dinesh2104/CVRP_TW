@@ -1,0 +1,179 @@
+With Cost as saving..
+
+Merged Route: 33 and 35 .
+Merged Route: 33 and 34 .
+Merged Route: 24 and 25 .
+Merged Route: 23 and 25 .
+Merged Route: 35 and 37 .
+Merged Route: 34 and 36 .
+Merged Route: 11 and 12 .
+Merged Route: 21 and 24 x
+Merged Route: 8 and 12  x
+Merged Route: 22 and 23 .
+Merged Route: 45 and 48 x
+Merged Route: 42 and 48 x
+Merged Route: 28 and 29 .
+Merged Route: 29 and 32 .
+Merged Route: 27 and 28 x
+Merged Route: 31 and 32.
+Merged Route: 45 and 49 x
+Merged Route: 38 and 42 x
+Merged Route: 30 and 31 .
+Merged Route: 47 and 50 x
+Merged Route: 17 and 19 .
+Merged Route: 7 and 9 x
+Merged Route: 2 and 3 x
+Merged Route: 5 and 6 x
+Merged Route: 4 and 50 x
+Merged Route: 1 and 6 x
+Merged Route: 16 and 17 x
+Merged Route: 39 and 44 x
+Merged Route: 15 and 16 .
+Merged Route: 40 and 43 x
+Merged Route: 14 and 19 x
+Merged Route: 40 and 41 .
+Merged Route: 13 and 14 .
+Merged Route: 7 and 20 x
+Merged Route: 18 and 43 x
+Merged Route: 10 and 44 x
+
+Route #1: 5 6 1 
+Route #2: 2 3 
+Route #3: 47 50 4 
+Route #4: 20 7 9 
+Route #5: 11 12 8 
+Route #6: 39 44 10 
+Route #7: 15 16 17 19 14 13 
+Route #8: 41 40 43 18 
+Route #9: 21 24 25 23 22 (diff by 1)
+Route #10: 26 
+Route #11: 27 28 29 32 31 30 (diff by 1)
+Route #12: 36 34 33 35 37 (same) 
+Route #13: 49 45 48 42 38 
+Route #14: 46
+cost - 1251.38
+
+--------------------------------------------------
+With nearest neighbour merge
+
+Total customers : 51
+Merged Route: 36 and 37 | Savings: 2 x
+Merged Route: 2 and 3 | Savings: 2 x
+Merged Route: 28 and 29 | Savings: 2 .
+Merged Route: 16 and 17 | Savings: 2 .
+Merged Route: 15 and 16 | Savings: 2 .
+Merged Route: 27 and 28 | Savings: 2.23607 x
+Merged Route: 1 and 3 | Savings: 3 .
+Merged Route: 17 and 18 | Savings: 3 x
+Merged Route: 33 and 35 | Savings: 4 .
+Merged Route: 29 and 32 | Savings: 4.47214 .
+Merged Route: 5 and 6 | Savings: 4.47214 x
+Merged Route: 24 and 25 | Savings: 5 .
+Merged Route: 11 and 12 | Savings: 5 .
+Merged Route: 23 and 25 | Savings: 5 .
+Merged Route: 30 and 32 | Savings: 5 x
+Merged Route: 21 and 22 | Savings: 5 x
+Merged Route: 33 and 34 | Savings: 5.38516 .
+Merged Route: 39 and 44 | Savings: 5.83095 x
+Merged Route: 14 and 18 | Savings: 5.83095 .
+Merged Route: 10 and 12 | Savings: 7.07107 .
+Merged Route: 26 and 31 | Savings: 7.61577 x
+Merged Route: 20 and 24 | Savings: 11.1803 .
+Merged Route: 40 and 43 | Savings: 11.1803 x
+Merged Route: 26 and 41 | Savings: 14.4222 x
+Merged Route: 7 and 13 | Savings: 14.8661 x
+Merged Route: 39 and 49 | Savings: 18.0278 x
+Merged Route: 6 and 8 | Savings: 19.8494 x
+Merged Route: 47 and 48 | Savings: 23.8537 x
+Merged Route: 4 and 10 | Savings: 25.6125 x
+Merged Route: 35 and 38 | Savings: 26.9258 x
+Merged Route: 7 and 50 | Savings: 30.4138  x
+Merged Route: 42 and 48 | Savings: 33.9706 x
+Merged Route: 19 and 44 | Savings: 38.5876 x
+Merged Route: 9 and 43 | Savings: 63.1348 x
+
+cost - 1378.11
+
+
+Postprocess 1 route valid
+Postprocess 2 route valid
+Postprocess 3 route valid
+Final Routes:
+Route #1: 2 3 1 
+Route #2: 11 12 10 4 
+Route #3: 5 6 8 
+Route #4: 50 7 13 
+Route #5: 40 43 9 
+Route #6: 15 16 17 18 14 
+Route #7: 49 39 44 19 
+Route #8: 20 24 25 23 
+Route #9: 21 22 
+Route #10: 41 26 31 
+Route #11: 27 28 29 32 30 
+Route #12: 34 33 35 38 
+Route #13: 36 37 
+Route #14: 47 48 42 
+Route #15: 45 
+Route #16: 46 
+
+---------------------------------------------------
+With time & distance Saving.
+
+Merged routes 46 and 45 with saving: 98.4907 .
+Merged routes 47 and 46 with saving: 94.7233 .
+Merged routes 33 and 35 with saving: 81.1774 .
+Merged routes 10 and 9 with saving: 77.6686 .
+Merged routes 24 and 25 with saving: 76.5423 .
+Merged routes 34 and 33 with saving: 75.2274 .
+Merged routes 9 and 8 with saving: 74.4362 .
+Merged routes 25 and 23 with saving: 70.6666 .
+Merged routes 11 and 12 with saving: 65.4066 .
+Merged routes 23 and 22 with saving: 64.7436 .
+Merged routes 48 and 42 with saving: 56.9412 x
+Merged routes 21 and 20 with saving: 44.0671 .
+Merged routes 43 and 38 with saving: 43.2144 .
+Merged routes 50 and 48 with saving: 42.6646 .
+Merged routes 35 and 43 with saving: 40.6757 x
+Merged routes 38 and 37 with saving: 38.2084 x
+Merged routes 37 and 32 with saving: 37.052 x
+Merged routes 6 and 4 with saving: 36.8637 .
+Merged routes 36 and 27 with saving: 35.9284 x
+Merged routes 31 and 30 with saving: 35.2371 .
+Merged routes 45 and 44 with saving: 35.051 x
+Merged routes 8 and 3 with saving: 32.148 x
+Merged routes 12 and 7 with saving: 31.4012 x
+Merged routes 19 and 18 with saving: 31.3356 .
+Merged routes 16 and 17 with saving: 30.25 .
+Merged routes 28 and 24 with saving: 29.2456 x
+Merged routes 41 and 40 with saving: 24.0128 .
+Merged routes 40 and 39 with saving: 24.9484 .
+Merged routes 15 and 11 with saving: 23.4295 x
+Merged routes 22 and 14 with saving: 23.3642 x
+Merged routes 2 and 5 with saving: 17.1245 .
+Merged routes 42 and 29 with saving: 15.8842 .
+Merged routes 49 and 2 with saving: 15.645 x
+Merged routes 32 and 13 with saving: 12.6055 x
+Merged routes 13 and 31 with saving: 12.2902 x
+Merged routes 44 and 19 with saving: 1.8774 x
+
+Postprocess 1 route valid
+Postprocess 2 route valid
+Postprocess 3 route valid
+Final Routes:
+Route #1: 1 
+Route #2: 49 2 5 
+Route #3: 10 9 8 3 
+Route #4: 6 4 
+Route #5: 15 11 12 7 
+Route #6: 34 33 35 43 38 37 32 13 31 30 
+Route #7: 28 24 25 23 22 14 
+Route #8: 16 17 
+Route #9: 47 46 45 44 19 18 
+Route #10: 21 20 
+Route #11: 26 
+Route #12: 36 27 
+Route #13: 50 48 42 29 
+Route #14: 41 40 39
+
+cost - 1173.88
+

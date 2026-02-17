@@ -407,12 +407,13 @@ vector<vector<node_t>> clarke_wright_cvrptw(const VRP &vrp)
     // ====================================================
     // MAIN DYNAMIC MERGE LOOP
     // ====================================================
+    int step=0;
     while (true)
     {
         double best_saving = -1e18;
         int best_i = -1, best_j = -1;
         vector<node_t> best_merged;
-
+        int from_, to_;
         for (size_t r_i = 0; r_i < routes.size(); r_i++)
         {
             if (routes[r_i].empty()) continue;
@@ -538,6 +539,8 @@ vector<vector<node_t>> clarke_wright_cvrptw(const VRP &vrp)
                         best_saving = total_saving;
                         best_i = r_i;
                         best_j = r_j;
+                        from_ = from;
+                        to_ = to;
                         best_merged = cand.merged;
                     }
                 }
@@ -558,8 +561,11 @@ vector<vector<node_t>> clarke_wright_cvrptw(const VRP &vrp)
         routes[best_j].clear();
         route_demand[best_j] = 0;
 
-        // cout << "Merged routes " << best_i + 1 << " and " << best_j + 1
+        // cout << "Merged routes " << from_<< " and " << to_
         //      << " with saving: " << best_saving << endl;
+
+        save_routes_snapshot(routes, "snap/step_" + to_string(step++) + ".csv");
+
         // print_routes(routes);
     }
 
