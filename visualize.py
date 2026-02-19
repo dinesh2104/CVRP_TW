@@ -40,7 +40,7 @@ def read_solomon(file_path):
 # -------------------------------
 # 2️⃣ Load nodes
 # -------------------------------
-nodes = read_solomon("c_50.txt")
+nodes = read_solomon("r_50.txt")
 
 # -------------------------------
 # 3️⃣ Load snapshot files

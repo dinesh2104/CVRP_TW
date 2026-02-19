@@ -333,56 +333,92 @@ double compute_waiting_time(const VRP &vrp,
 }
 
 
-vector<vector<node_t>> clarke_wright_cvrptw(const VRP &vrp)
-{
-    size_t N = vrp.getSize();
+vector<vector<int>> clustering_kmedoid(VRP vrp,int k){
+  int n=vrp.getSize()-1;
+  vector<int> medoids_id;
+  // Randomly select k medoids
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_int_distribution<> dis(1, n); // assuming customer IDs are from 1 to n
 
-    // ---------------- PARAMETERS ----------------
-    double alpha = 0.7;   // distance weight
-    double beta  = 0.3;   // waiting penalty weight
-    // ------------------------------------------------
+  while(medoids_id.size()<k){
+    int m_id=dis(gen);
+    if(find(medoids_id.begin(),medoids_id.end(),m_id)==medoids_id.end()){
+      medoids_id.push_back(m_id);
+    }
+  }
 
-    vector<vector<node_t>> routes;
-    vector<demand_t> route_demand;
-    vector<int> node_to_route(N, -1);
+  cout<<"Initial Medoids: ";
+  for(auto m:medoids_id){
+    cout<<m<<" ";
+  }
+  cout<<endl;
 
-    // ---- Initial single-customer routes ----
-    for (node_t i = 1; i < N; i++)
-    {
-        routes.push_back({i});
-        route_demand.push_back(vrp.node[i].demand);
-        node_to_route[i] = routes.size() - 1;
+  bool changed=true;
+  vector<vector<int>> clusters(k);
+  while(changed){
+    changed=false;
+    // Assignment Step
+    clusters.clear();
+    clusters.resize(k);
+    for(int i=1;i<=n;i++){
+      weight_t min_dist=DBL_MAX;
+      int assigned_cluster=-1;
+      for(int j=0;j<k;j++){
+        weight_t dist=vrp.get_dist(i,medoids_id[j]);
+        if(dist<min_dist){
+          min_dist=dist;
+          assigned_cluster=j;
+        }
+      }
+      clusters[assigned_cluster].push_back(i);
     }
 
-    // ====================================================
-    // Helper: compute arrival time at last node of route
-    // ====================================================
-    auto compute_arrival_time = [&](const vector<node_t> &route)
-    {
-        double time = 0.0;
-        node_t prev = 0; // depot
-
-        for (node_t node : route)
-        {
-            time += vrp.get_dist(prev, node);
-
-            if (time < vrp.node[node].earlyTime)
-                time = vrp.node[node].earlyTime;
-
-            if (time > vrp.node[node].latestTime)
-                return -1.0;  // infeasible
-
-            time += vrp.node[node].serviceTime;
-            prev = node;
+    // Update Step
+    for(int j=0;j<k;j++){
+      weight_t min_total_dist=DBL_MAX;
+      int new_medoid=-1;
+      for(auto candidate:clusters[j]){
+        weight_t total_dist=0.0;
+        for(auto point:clusters[j]){
+          total_dist+=vrp.get_dist(candidate,point);
         }
+        if(total_dist<min_total_dist){
+          min_total_dist=total_dist;
+          new_medoid=candidate;
+        }
+      }
+      if(new_medoid!=medoids_id[j]){
+        medoids_id[j]=new_medoid;
+        changed=true;
+      }
+    }
+  }
 
-        return time;
-    };
+  // Output final clusters
+  for(int j=0;j<k;j++){
+    cout<<"Cluster "<<j+1<<" (Medoid: "<<medoids_id[j]<<"): ";
+    for(auto customer:clusters[j]){
+      cout<<customer<<" ";
+    }
+    cout<<endl;
+  }
+  return clusters;
+}
 
-    // ====================================================
-    // Helper: full feasibility check
-    // ====================================================
-    auto verify_route = [&](const vector<node_t> &route)
+vector<vector<node_t>>
+clarke_wright_cvrptw(const VRP &vrp,
+                     const vector<vector<int>> &clusters)
+{
+    double alpha = 0.7;
+    double beta  = 0.3;
+
+    vector<vector<node_t>> final_routes;
+
+    // ======================================================
+    // Helper functions
+    // ======================================================
+    auto compute_arrival_time = [&](const vector<node_t> &route)
     {
         double time = 0.0;
         node_t prev = 0;
@@ -395,185 +431,182 @@ vector<vector<node_t>> clarke_wright_cvrptw(const VRP &vrp)
                 time = vrp.node[node].earlyTime;
 
             if (time > vrp.node[node].latestTime)
-                return false;
+                return -1.0;
 
             time += vrp.node[node].serviceTime;
             prev = node;
         }
 
-        return true;
+        return time;
     };
 
-    // ====================================================
-    // MAIN DYNAMIC MERGE LOOP
-    // ====================================================
-    int step=0;
-    while (true)
+    auto verify_route = [&](const vector<node_t> &route)
     {
-        double best_saving = -1e18;
-        int best_i = -1, best_j = -1;
-        vector<node_t> best_merged;
-        int from_, to_;
-        for (size_t r_i = 0; r_i < routes.size(); r_i++)
+        return compute_arrival_time(route) >= 0;
+    };
+
+    // ======================================================
+    // Process each cluster independently
+    // ======================================================
+    int step=0;
+    for (const auto &cluster : clusters)
+    {
+        vector<vector<node_t>> routes;
+        vector<double> route_demand;
+
+        // ---- Initialize single-customer routes ----
+        for (auto node : cluster)
         {
-            if (routes[r_i].empty()) continue;
+            routes.push_back({node});
+            route_demand.push_back(vrp.node[node].demand);
+        }
 
-            for (size_t r_j = r_i + 1; r_j < routes.size(); r_j++)
+        // ==================================================
+        // Clarke–Wright inside this cluster only
+        // ==================================================
+        while (true)
+        {
+            double best_saving = -1e18;
+            int best_i = -1, best_j = -1;
+            vector<node_t> best_merge;
+            int from_;
+            int to_;
+
+            for (size_t r_i = 0; r_i < routes.size(); r_i++)
             {
-                if (routes[r_j].empty()) continue;
+                if (routes[r_i].empty()) continue;
 
-                if (route_demand[r_i] + route_demand[r_j] >
-                    vrp.getCapacity())
-                    continue;
-
-                auto &Ri = routes[r_i];
-                auto &Rj = routes[r_j];
-
-                node_t i1 = Ri.front();
-                node_t i2 = Ri.back();
-                node_t j1 = Rj.front();
-                node_t j2 = Rj.back();
-
-                double arrival_i_end = compute_arrival_time(Ri);
-                double arrival_j_end = compute_arrival_time(Rj);
-
-                if (arrival_i_end < 0 || arrival_j_end < 0)
-                    continue;
-
-                // ------------- 4 ORIENTATIONS -------------
-                struct Candidate {
-                    node_t from;
-                    node_t to;
-                    vector<node_t> merged;
-                };
-
-                vector<Candidate> candidates;
-
-                // i2 -> j1
+                for (size_t r_j = r_i + 1; r_j < routes.size(); r_j++)
                 {
-                    vector<node_t> merged = Ri;
-                    merged.insert(merged.end(),
-                                  Rj.begin(), Rj.end());
-                    candidates.push_back({i2, j1, merged});
-                }
+                    if (routes[r_j].empty()) continue;
 
-                // j2 -> i1
-                {
-                    vector<node_t> merged = Rj;
-                    merged.insert(merged.end(),
-                                  Ri.begin(), Ri.end());
-                    candidates.push_back({j2, i1, merged});
-                }
-
-                // i1 -> j1 (reverse Ri)
-                {
-                    vector<node_t> Ri_rev = Ri;
-                    reverse(Ri_rev.begin(), Ri_rev.end());
-                    vector<node_t> merged = Ri_rev;
-                    merged.insert(merged.end(),
-                                  Rj.begin(), Rj.end());
-                    candidates.push_back({i1, j1, merged});
-                }
-
-                // i2 -> j2 (reverse Rj)
-                {
-                    vector<node_t> Rj_rev = Rj;
-                    reverse(Rj_rev.begin(), Rj_rev.end());
-                    vector<node_t> merged = Ri;
-                    merged.insert(merged.end(),
-                                  Rj_rev.begin(), Rj_rev.end());
-                    candidates.push_back({i2, j2, merged});
-                }
-
-                // -------- Evaluate each candidate ----------
-                for (auto &cand : candidates)
-                {
-                    node_t from = cand.from;
-                    node_t to   = cand.to;
-
-                    double arrival_from;
-
-                    if (from == i2)
-                        arrival_from = arrival_i_end;
-                    else if (from == j2)
-                        arrival_from = arrival_j_end;
-                    else
-                    {
-                        vector<node_t> temp =
-                            (from == i1)
-                            ? vector<node_t>(Ri.rbegin(), Ri.rend())
-                            : vector<node_t>(Rj.rbegin(), Rj.rend());
-
-                        arrival_from = compute_arrival_time(temp);
-                    }
-
-                    if (arrival_from < 0) continue;
-
-                    // ---------- Distance Saving ----------
-                    double dist_saving =
-                        vrp.get_dist(0, from) +
-                        vrp.get_dist(0, to) -
-                        vrp.get_dist(from, to);
-
-                    // ---------- Waiting Penalty ----------
-                    double arrival_to =
-                        arrival_from +
-                        vrp.get_dist(from, to);
-
-                    double waiting = 0.0;
-                    if (arrival_to < vrp.node[to].earlyTime)
-                        waiting =
-                            vrp.node[to].earlyTime -
-                            arrival_to;
-
-                    // ---------- GENERALIZED SAVING ----------
-                    double total_saving =
-                        alpha * dist_saving
-                        - beta * waiting;
-
-                    if (!verify_route(cand.merged))
+                    if (route_demand[r_i] + route_demand[r_j] >
+                        vrp.getCapacity())
                         continue;
 
-                    if (total_saving > best_saving)
+                    auto &Ri = routes[r_i];
+                    auto &Rj = routes[r_j];
+
+                    node_t i1 = Ri.front();
+                    node_t i2 = Ri.back();
+                    node_t j1 = Rj.front();
+                    node_t j2 = Rj.back();
+
+                    double arrival_i_end = compute_arrival_time(Ri);
+                    double arrival_j_end = compute_arrival_time(Rj);
+
+                    if (arrival_i_end < 0 || arrival_j_end < 0)
+                        continue;
+
+                    struct Candidate {
+                        node_t from;
+                        node_t to;
+                        vector<node_t> merged;
+                    };
+
+                    vector<Candidate> candidates;
+
+                    // i2 -> j1
                     {
-                        best_saving = total_saving;
-                        best_i = r_i;
-                        best_j = r_j;
-                        from_ = from;
-                        to_ = to;
-                        best_merged = cand.merged;
+                        vector<node_t> merged = Ri;
+                        merged.insert(merged.end(),
+                                      Rj.begin(), Rj.end());
+                        candidates.push_back({i2, j1, merged});
+                    }
+
+                    // j2 -> i1
+                    {
+                        vector<node_t> merged = Rj;
+                        merged.insert(merged.end(),
+                                      Ri.begin(), Ri.end());
+                        candidates.push_back({j2, i1, merged});
+                    }
+
+                    // i1 -> j1
+                    {
+                        vector<node_t> Ri_rev = Ri;
+                        reverse(Ri_rev.begin(), Ri_rev.end());
+                        vector<node_t> merged = Ri_rev;
+                        merged.insert(merged.end(),
+                                      Rj.begin(), Rj.end());
+                        candidates.push_back({i1, j1, merged});
+                    }
+
+                    // i2 -> j2
+                    {
+                        vector<node_t> Rj_rev = Rj;
+                        reverse(Rj_rev.begin(), Rj_rev.end());
+                        vector<node_t> merged = Ri;
+                        merged.insert(merged.end(),
+                                      Rj_rev.begin(), Rj_rev.end());
+                        candidates.push_back({i2, j2, merged});
+                    }
+
+                    for (auto &cand : candidates)
+                    {
+                        node_t from = cand.from;
+                        node_t to   = cand.to;
+
+                        double arrival_from =
+                            compute_arrival_time(
+                                (from == i2 || from == i1) ? Ri : Rj
+                            );
+
+                        if (arrival_from < 0) continue;
+
+                        double dist_saving =
+                            vrp.get_dist(0, from) +
+                            vrp.get_dist(0, to) -
+                            vrp.get_dist(from, to);
+
+                        double arrival_to =
+                            arrival_from +
+                            vrp.get_dist(from, to);
+
+                        double waiting = 0.0;
+                        if (arrival_to < vrp.node[to].earlyTime)
+                            waiting =
+                                vrp.node[to].earlyTime -
+                                arrival_to;
+
+                        double total_saving =
+                            alpha * dist_saving
+                            - beta * waiting;
+
+                        if (!verify_route(cand.merged))
+                            continue;
+
+                        if (total_saving > best_saving)
+                        {
+                            best_saving = total_saving;
+                            best_i = r_i;
+                            best_j = r_j;
+                            from_=from;
+                            to_=to;
+                            best_merge = cand.merged;
+                        }
                     }
                 }
             }
+
+            if (best_saving <= 0)
+                break;
+
+            routes[best_i] = best_merge;
+            route_demand[best_i] += route_demand[best_j];
+
+            routes[best_j].clear();
+            route_demand[best_j] = 0;
+            // cout<<"Merged "<<from_<<" to "<<to_<<endl;
+            save_routes_snapshot(routes, "snap/step_" + to_string(step++) + ".csv");
+
         }
 
-        // Stop if no positive saving
-        if (best_saving <= 0)
-            break;
-
-        // ---------- Accept best merge ----------
-        routes[best_i] = best_merged;
-        route_demand[best_i] += route_demand[best_j];
-
-        for (node_t node : routes[best_j])
-            node_to_route[node] = best_i;
-
-        routes[best_j].clear();
-        route_demand[best_j] = 0;
-
-         cout << "Merged routes " << from_<< " and " << to_
-           << " with saving: " << best_saving << endl;
-
-        save_routes_snapshot(routes, "snap/step_" + to_string(step++) + ".csv");
-
-        // print_routes(routes);
+        // Add cluster routes to final result
+        for (auto &r : routes)
+            if (!r.empty())
+                final_routes.push_back(r);
     }
-
-    // -------- Collect final routes --------
-    vector<vector<node_t>> final_routes;
-    for (auto &r : routes)
-        if (!r.empty())
-            final_routes.push_back(r);
 
     return final_routes;
 }
@@ -902,36 +935,51 @@ VRP vrp;
 
   chrono::steady_clock::time_point mid_start = chrono::steady_clock::now();
   chrono::steady_clock::time_point total_start = chrono::steady_clock::now();
-  
-  // Implementing the Clark and Wright Savings Algorithm for CVRPTW
-  auto routes = clarke_wright_cvrptw(vrp);
-  
-  chrono::steady_clock::time_point mid_end = chrono::steady_clock::now();
 
-  weight_t min_cost = calculate_total_cost(vrp, routes);
-  weight_t min_cost1=min_cost;
-  auto best_routes = routes;
-  
-  chrono::steady_clock::time_point post_start = chrono::steady_clock::now();
-
-  weight_t post_optimized_cost=min_cost;
-  best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
-
-  chrono::steady_clock::time_point post_end = chrono::steady_clock::now();
-  chrono::steady_clock::time_point total_end = chrono::steady_clock::now();
-
-  min_cost=calculate_total_cost(vrp,best_routes);
-  print_routes(best_routes);
-  if(verify_route(vrp,best_routes)){
-    cerr<<"File: "<<argv[1]<<" ";
-    cerr<<"Route_Construction_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(mid_end - mid_start).count()*1.E-9)<<" s ";
-    cerr<<"Post_Optimization_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(post_end - post_start).count()*1.E-9)<<" s ";
-    cerr<<"Total_Cost-1: "<<min_cost1<<" ";
-    cerr<<"Total_Cost-2: "<<min_cost<<" ";
-    cerr<<"Total_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(total_end - total_start).count()*1.E-9)<<" s ";
-    cerr<<"Vehicle_Used: "<<best_routes.size()<<" ";
-    cerr<<"route_length: "<<max_length_of_route(best_routes)<<" ";
-    cerr<<"VALID"<<endl;
+  //Pre-processing - CLustering.
+  int n_clusters;
+  int sum_demand=0;
+  for(int i=1;i<vrp.getSize();i++){
+    sum_demand+=vrp.node[i].demand;
   }
+  n_clusters=sum_demand/vrp.getCapacity();
+
+
+  vector<vector<node_t>> clusters;
+  
+  clusters=clustering_kmedoid(vrp,n_clusters); // you can change the number of clusters here. I have set it to 10 for now. You can experiment with different values and see how it affects the solution quality and runtime.
+
+  // Implementing the Clark and Wright Savings Algorithm for CVRPTW
+  auto routes = clarke_wright_cvrptw(vrp,clusters);
+  
+  print_routes(routes);
+
+  // chrono::steady_clock::time_point mid_end = chrono::steady_clock::now();
+
+  // weight_t min_cost = calculate_total_cost(vrp, routes);
+  // weight_t min_cost1=min_cost;
+  // auto best_routes = routes;
+  
+  // chrono::steady_clock::time_point post_start = chrono::steady_clock::now();
+
+  // weight_t post_optimized_cost=min_cost;
+  // best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
+
+  // chrono::steady_clock::time_point post_end = chrono::steady_clock::now();
+  // chrono::steady_clock::time_point total_end = chrono::steady_clock::now();
+
+  // min_cost=calculate_total_cost(vrp,best_routes);
+  // print_routes(best_routes);
+  // if(verify_route(vrp,best_routes)){
+  //   cerr<<"File: "<<argv[1]<<" ";
+  //   cerr<<"Route_Construction_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(mid_end - mid_start).count()*1.E-9)<<" s ";
+  //   cerr<<"Post_Optimization_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(post_end - post_start).count()*1.E-9)<<" s ";
+  //   cerr<<"Total_Cost-1: "<<min_cost1<<" ";
+  //   cerr<<"Total_Cost-2: "<<min_cost<<" ";
+  //   cerr<<"Total_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(total_end - total_start).count()*1.E-9)<<" s ";
+  //   cerr<<"Vehicle_Used: "<<best_routes.size()<<" ";
+  //   cerr<<"route_length: "<<max_length_of_route(best_routes)<<" ";
+  //   cerr<<"VALID"<<endl;
+  // }
   return 0;
 }

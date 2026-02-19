@@ -329,12 +329,12 @@ vector<vector<node_t>> clarke_wright_cvrptw(const VRP &vrp)
     {
         for (node_t j = i + 1; j < N; j++)
         {
-            // weight_t s =
-            //     vrp.get_dist(DEPOT, i) +
-            //     vrp.get_dist(DEPOT, j) -
-            //     vrp.get_dist(i, j);
+            weight_t s =
+                vrp.get_dist(DEPOT, i) +
+                vrp.get_dist(DEPOT, j) -
+                vrp.get_dist(i, j);
         
-            weight_t s= -vrp.get_dist(i,j);
+            //weight_t s= -vrp.get_dist(i,j);
 
             savings.push_back({i, j, s});
         }
