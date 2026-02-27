@@ -918,9 +918,94 @@ int max_length_of_route(const std::vector<std::vector<node_t>> &routes) {
   return max_length;
 }
 
+// Post optimization - Inter Route Relocate
 
+// --- The Relocate Algorithm ---
+void inter_route_relocate(const VRP &vrp, vector<vector<node_t>> &routes) {
+    bool improvement = true;
 
+    // Keep running until we reach a Local Optimum (no more improvements possible)
+    while (improvement) {
+        improvement = false;
 
+        // Iterate through all possible pairs of routes
+        for (size_t r1 = 0; r1 < routes.size(); r1++) {
+            for (size_t r2 = 0; r2 < routes.size(); r2++) {
+                
+                if (r1 == r2) continue; // Don't relocate within the same route here
+
+                auto &routeA = routes[r1]; // Source Route
+                auto &routeB = routes[r2]; // Destination Route
+
+                // Skip if Route A is practically empty (e.g., just [Depot, Depot])
+                if (routeA.size() <= 2) continue; 
+
+                // Iterate through every customer 'u' in Route A (skip depots at ends)
+                for (size_t i = 1; i < routeA.size() - 1; i++) {
+                    node_t u = routeA[i];
+                    node_t t = routeA[i - 1]; // Predecessor in A
+                    node_t w = routeA[i + 1]; // Successor in A
+
+                    // 1. Calculate the distance saved by removing 'u' from Route A
+                    // Distance saved = (t->u) + (u->w) - (t->w)
+                    double savings_A = vrp.get_dist(t, u) + vrp.get_dist(u, w) - vrp.get_dist(t, w);
+
+                    // Iterate through every possible insertion point 'j' in Route B
+                    for (size_t j = 1; j < routeB.size(); j++) {
+                        node_t x = routeB[j - 1]; // Predecessor in B
+                        node_t y = routeB[j];     // Successor in B
+
+                        // 2. Calculate the distance cost of inserting 'u' between x and y
+                        // Distance added = (x->u) + (u->y) - (x->y)
+                        double cost_B = vrp.get_dist(x, u) + vrp.get_dist(u, y) - vrp.get_dist(x, y);
+
+                        // Net change in total distance
+                        double total_gain = savings_A - cost_B;
+
+                        // 3. Fast Pruning (Only proceed if the move actually saves distance)
+                        if (total_gain > 1e-6) {
+                            
+                            // Create copies of the routes to test the move
+                            vector<node_t> new_routeA = routeA;
+                            vector<node_t> new_routeB = routeB;
+
+                            // Perform the physical relocation on the copies
+                            new_routeA.erase(new_routeA.begin() + i);
+                            new_routeB.insert(new_routeB.begin() + j, u);
+
+                            // 4. Strict Constraint Verification (Capacity & Time Windows)
+                            // This is the O(N) step, which is why we only do it if total_gain > 0
+                            if (verify_single_route(vrp, new_routeA) && verify_single_route(vrp, new_routeB)) {
+                                
+                                // The move is valid and improves the cost! Apply it permanently.
+                                cout<<"Relocating customer "<<u<<" from route "<<r1<<" to route "<<r2<<" at position "<<j<<endl;
+                                routeA = new_routeA;
+                                routeB = new_routeB;
+                                
+                                improvement = true;
+                                
+                                // First-Improvement strategy: restart the search immediately 
+                                // because route structures have changed.
+                                goto end_of_search; 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        end_of_search:;
+        
+        // --- Cleanup Phase ---
+        // If a route was completely emptied by relocations, remove it from the list
+        for (auto it = routes.begin(); it != routes.end(); ) {
+            if (it->size() <= 2) { 
+                it = routes.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
 
 int main(int argc, char *argv[]) {
 VRP vrp;
@@ -954,32 +1039,42 @@ VRP vrp;
   
   print_routes(routes);
 
-  // chrono::steady_clock::time_point mid_end = chrono::steady_clock::now();
-
-  // weight_t min_cost = calculate_total_cost(vrp, routes);
-  // weight_t min_cost1=min_cost;
-  // auto best_routes = routes;
+  //Adding 0....0 to the route.
+  for(auto &route:routes){
+    route.insert(route.begin(),DEPOT);
+    route.push_back(DEPOT);
+  }
   
-  // chrono::steady_clock::time_point post_start = chrono::steady_clock::now();
+  inter_route_relocate(vrp,routes);
 
-  // weight_t post_optimized_cost=min_cost;
-  // best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
+  print_routes(routes);
 
-  // chrono::steady_clock::time_point post_end = chrono::steady_clock::now();
-  // chrono::steady_clock::time_point total_end = chrono::steady_clock::now();
+  chrono::steady_clock::time_point mid_end = chrono::steady_clock::now();
 
-  // min_cost=calculate_total_cost(vrp,best_routes);
-  // print_routes(best_routes);
-  // if(verify_route(vrp,best_routes)){
-  //   cerr<<"File: "<<argv[1]<<" ";
-  //   cerr<<"Route_Construction_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(mid_end - mid_start).count()*1.E-9)<<" s ";
-  //   cerr<<"Post_Optimization_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(post_end - post_start).count()*1.E-9)<<" s ";
-  //   cerr<<"Total_Cost-1: "<<min_cost1<<" ";
-  //   cerr<<"Total_Cost-2: "<<min_cost<<" ";
-  //   cerr<<"Total_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(total_end - total_start).count()*1.E-9)<<" s ";
-  //   cerr<<"Vehicle_Used: "<<best_routes.size()<<" ";
-  //   cerr<<"route_length: "<<max_length_of_route(best_routes)<<" ";
-  //   cerr<<"VALID"<<endl;
-  // }
+  weight_t min_cost = calculate_total_cost(vrp, routes);
+  weight_t min_cost1=min_cost;
+  auto best_routes = routes;
+  
+  chrono::steady_clock::time_point post_start = chrono::steady_clock::now();
+
+  weight_t post_optimized_cost=min_cost;
+  //best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
+
+  chrono::steady_clock::time_point post_end = chrono::steady_clock::now();
+  chrono::steady_clock::time_point total_end = chrono::steady_clock::now();
+
+  min_cost=calculate_total_cost(vrp,best_routes);
+  print_routes(best_routes);
+  if(verify_route(vrp,best_routes)){
+    cerr<<"File: "<<argv[1]<<" ";
+    cerr<<"Route_Construction_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(mid_end - mid_start).count()*1.E-9)<<" s ";
+    cerr<<"Post_Optimization_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(post_end - post_start).count()*1.E-9)<<" s ";
+    cerr<<"Total_Cost-1: "<<min_cost1<<" ";
+    cerr<<"Total_Cost-2: "<<min_cost<<" ";
+    cerr<<"Total_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(total_end - total_start).count()*1.E-9)<<" s ";
+    cerr<<"Vehicle_Used: "<<best_routes.size()<<" ";
+    cerr<<"route_length: "<<max_length_of_route(best_routes)<<" ";
+    cerr<<"VALID"<<endl;
+  }
   return 0;
 }

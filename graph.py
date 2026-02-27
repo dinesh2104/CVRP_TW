@@ -5,6 +5,53 @@ from matplotlib.patches import FancyArrowPatch
 import matplotlib.colors as mcolors
 
 
+def verify_routes(df, routes, capacity):
+    for i, route in enumerate(routes):
+        load = 0
+        for cust_id in route:
+            demand = df.loc[df["cust_id"] == cust_id, "demand"].values[0]
+            load += demand
+        if load > capacity:
+            print(f"Route {i + 1} exceeds capacity: {load} > {capacity}")
+        else:
+            print(f"Route {i + 1} is feasible: Load = {load}")
+
+    #Verify time windows
+    for i, route in enumerate(routes):
+        time = 0
+        for j in range(len(route) - 1):
+            cust_id = route[j]
+            next_cust_id = route[j + 1]
+            time+= np.sqrt((df.loc[df["cust_id"] == next_cust_id, "x"].values[0] - df.loc[df["cust_id"] == cust_id, "x"].values[0]) ** 2 + (df.loc[df["cust_id"] == next_cust_id, "y"].values[0] - df.loc[df["cust_id"] == cust_id, "y"].values[0]) ** 2)
+            ready = df.loc[df["cust_id"] == cust_id, "ready"].values[0]
+            due = df.loc[df["cust_id"] == cust_id, "due"].values[0]
+            service = df.loc[df["cust_id"] == cust_id, "service"].values[0]
+
+            if time < ready:
+                time = ready
+            elif time > due:
+                print(f"Route {i + 1} violates time window at customer {cust_id}: Time = {time}, Due = {due}")
+                break
+
+            time += service
+    print("All routes verified for time windows.")
+    # Print the total distance
+    total_distance = 0
+    for route in routes:
+        for j in range(len(route) - 1):
+            cust_id = route[j]
+            next_cust_id = route[j + 1]
+
+            x1 = df.loc[df["cust_id"] == cust_id, "x"].values[0]
+            y1 = df.loc[df["cust_id"] == cust_id, "y"].values[0]
+            x2 = df.loc[df["cust_id"] == next_cust_id, "x"].values[0]
+            y2 = df.loc[df["cust_id"] == next_cust_id, "y"].values[0]
+
+            distance = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+            total_distance += distance
+    print(f"Total distance of all routes: {total_distance:.2f}")
+        
+
 def read_solomon_file(filename: str):
     with open(filename, "r") as f:
         lines = f.readlines()
@@ -109,20 +156,24 @@ def solve_cvrptw_from_file(filename: str):
 
     # Example routes
     routes = [
-        [0, 40, 39, 7, 32, 31, 34, 0],
-        [0, 17, 19, 12, 20, 0],[0, 47, 0]
-,[0, 27, 26, 46, 45, 13, 0]
-,[0, 9, 28, 24, 38, 50, 0]
-,[0, 25, 14, 42, 36, 3, 16, 0]
-,[0, 11, 4, 0]
-,[0, 49, 29, 10, 37, 8, 0]
-,[0, 23, 30, 5, 0]
-,[0, 33, 21, 18, 48, 2, 35, 15, 0]
-,[0, 1, 41, 44, 6, 22, 43, 0]]
+    [0, 47, 48, 43, 0],
+    [0, 9, 28, 24, 38, 50, 0],
+    [0, 49, 29, 10, 4, 0],
+    [0, 40, 39, 7, 32, 31, 34, 0],
+    [0, 17, 19, 12, 20, 0],
+    [0, 33, 21, 18, 35, 15, 0],
+    [0, 23, 30, 11, 0],
+    [0, 25, 14, 42, 36, 3, 16, 0],
+    [0, 1, 41, 44, 6, 22, 2, 0],
+    [0, 5, 0],
+    [0, 26, 46, 45, 13, 0],
+    [0, 27, 37, 8, 0]
+]
+    verify_routes(df, routes, capacity)
 
-    plot_routes(df, routes)
+    #plot_routes(df, routes)
 
 
 # Example usage
-filename = "r_50.txt"
+filename = "c100.txt"
 solve_cvrptw_from_file(filename)
