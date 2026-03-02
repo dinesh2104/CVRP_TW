@@ -97,6 +97,15 @@ class VRP {
   demand_t getCapacity() const {
     return capacity;
   }
+
+  demand_t get_route_load(const vector<node_t> &route) const {
+    demand_t load = 0.0;
+    for (auto node : route) {
+      load += this->node[node].demand;
+    }
+    return load;
+  }
+
 };
 
 std::vector<std::vector<Edge>>
@@ -1007,6 +1016,274 @@ void inter_route_relocate(const VRP &vrp, vector<vector<node_t>> &routes) {
     }
 }
 
+// --- The Swap Algorithm ---
+
+void inter_route_swap(const VRP &vrp, vector<vector<node_t>> &routes) {
+    bool improvement = true;
+
+    // Continue until Local Optimum is reached
+    while (improvement) {
+        improvement = false;
+
+        // Iterate through unique pairs of routes
+        // r2 starts at r1 + 1 to avoid duplicate checks and self-swaps
+        for (size_t r1 = 0; r1 < routes.size(); r1++) {
+            for (size_t r2 = r1 + 1; r2 < routes.size(); r2++) {
+                
+                auto &routeA = routes[r1];
+                auto &routeB = routes[r2];
+
+                // Skip routes that only contain the Depot
+                if (routeA.size() <= 2 || routeB.size() <= 2) continue;
+
+                // Iterate through every customer 'u' in Route A (skip depots)
+                for (size_t i = 1; i < routeA.size() - 1; i++) {
+                    node_t u = routeA[i];
+                    node_t t = routeA[i - 1]; // Predecessor of u
+                    node_t w = routeA[i + 1]; // Successor of u
+
+                    // Iterate through every customer 'v' in Route B (skip depots)
+                    for (size_t j = 1; j < routeB.size() - 1; j++) {
+                        node_t v = routeB[j];
+                        node_t x = routeB[j - 1]; // Predecessor of v
+                        node_t y = routeB[j + 1]; // Successor of v
+
+                        // 1. Fast O(1) Distance Delta Calculation
+                        double cost_before = vrp.get_dist(t, u) + vrp.get_dist(u, w) + 
+                                             vrp.get_dist(x, v) + vrp.get_dist(v, y);
+                        
+                        double cost_after = vrp.get_dist(t, v) + vrp.get_dist(v, w) + 
+                                            vrp.get_dist(x, u) + vrp.get_dist(u, y);
+
+                        double total_gain = cost_before - cost_after;
+
+                        // 2. Fast Pruning: Only proceed if distance actually improves
+                        if (total_gain > 1e-6) {
+                            
+                            // 3. Quick Capacity Check
+                            // Route A gains 'v' and loses 'u'. Route B gains 'u' and loses 'v'.
+                            double current_load_A = vrp.get_route_load(routeA);
+                            double current_load_B = vrp.get_route_load(routeB);
+                            
+                            double new_load_A = current_load_A - vrp.node[u].demand + vrp.node[v].demand;
+                            double new_load_B = current_load_B - vrp.node[v].demand + vrp.node[u].demand;
+
+                            if (new_load_A <= vrp.getCapacity() && new_load_B <= vrp.getCapacity()) {
+                                
+                                // 4. Strict Time Window Verification (O(N) Step)
+                                vector<node_t> new_routeA = routeA;
+                                vector<node_t> new_routeB = routeB;
+
+                                // Perform the physical swap on the candidate copies
+                                new_routeA[i] = v;
+                                new_routeB[j] = u;
+
+                                if (verify_single_route(vrp, new_routeA) && verify_single_route(vrp, new_routeB)) {
+                                    
+                                    // Apply the valid and improving move
+                                    cout<<"Swapping customer "<<u<<" in route "<<r1<<" with customer "<<v<<" in route "<<r2<<endl;
+                                    routeA = new_routeA;
+                                    routeB = new_routeB;
+                                    
+                                    improvement = true;
+                                    
+                                    // First-Improvement strategy: break out and restart
+                                    goto end_of_search; 
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        end_of_search:;
+    }
+}
+
+// --Inter Route 2-Opt* Algorithm (Cross-Exchange)--
+
+void inter_route_2opt_star(const VRP &vrp, vector<vector<node_t>> &routes) {
+    bool improvement = true;
+
+    // Run until Local Optimum is reached
+    while (improvement) {
+        improvement = false;
+
+        // Iterate through unique pairs of routes
+        for (size_t r1 = 0; r1 < routes.size(); r1++) {
+            for (size_t r2 = r1 + 1; r2 < routes.size(); r2++) {
+                
+                auto &routeA = routes[r1];
+                auto &routeB = routes[r2];
+
+                // Skip routes that only contain the Depot
+                if (routeA.size() <= 2 || routeB.size() <= 2) continue;
+
+                // Iterate through edges in Route A. 
+                // Edge is (t, u) where t is at index i, u is at index i+1
+                for (size_t i = 0; i < routeA.size() - 1; i++) {
+                    node_t t = routeA[i];
+                    node_t u = routeA[i + 1];
+
+                    // Iterate through edges in Route B.
+                    // Edge is (x, v) where x is at index j, v is at index j+1
+                    for (size_t j = 0; j < routeB.size() - 1; j++) {
+                        node_t x = routeB[j];
+                        node_t v = routeB[j + 1];
+
+                        // 1. Fast O(1) Distance Delta Calculation
+                        double cost_before = vrp.get_dist(t, u) + vrp.get_dist(x, v);
+                        double cost_after  = vrp.get_dist(t, v) + vrp.get_dist(x, u);
+
+                        double total_gain = cost_before - cost_after;
+
+                        // 2. Fast Pruning: Only proceed if distance improves
+                        if (total_gain > 1e-6) {
+                            
+                            // 3. Construct the Candidate Routes
+                            // New Route A: Depot -> ... -> t -> v -> ... -> Depot
+                            // New Route B: Depot -> ... -> x -> u -> ... -> Depot
+                            
+                            vector<node_t> new_routeA;
+                            vector<node_t> new_routeB;
+                            
+                            // Reserve space to avoid reallocation overhead
+                            new_routeA.reserve(routeA.size() + routeB.size());
+                            new_routeB.reserve(routeA.size() + routeB.size());
+
+                            // Build New Route A: [Start of A up to t] + [Tail of B from v]
+                            new_routeA.insert(new_routeA.end(), routeA.begin(), routeA.begin() + i + 1);
+                            new_routeA.insert(new_routeA.end(), routeB.begin() + j + 1, routeB.end());
+
+                            // Build New Route B: [Start of B up to x] + [Tail of A from u]
+                            new_routeB.insert(new_routeB.end(), routeB.begin(), routeB.begin() + j + 1);
+                            new_routeB.insert(new_routeB.end(), routeA.begin() + i + 1, routeA.end());
+
+                            // 4. Quick Capacity Check (Optional but recommended)
+                            // Skip the heavy O(N) time window check if the load clearly exceeds capacity
+                            double new_load_A = vrp.get_route_load(new_routeA);
+                            double new_load_B = vrp.get_route_load(new_routeB);
+
+                            if (new_load_A <= vrp.getCapacity() && new_load_B <= vrp.getCapacity()) {
+                                
+                                // 5. Strict Time Window Verification (O(N) Step)
+                                if (verify_single_route(vrp, new_routeA) && verify_single_route(vrp, new_routeB)) {
+                                    
+                                    // Move is valid and improves the cost! Apply it.
+                                    cout<<"2-opt-Exchange"<<t<<"->"<<u<<"between"<<x<<"->"<<v<<endl;
+                                    routeA = new_routeA;
+                                    routeB = new_routeB;
+                                    
+                                    improvement = true;
+                                    
+                                    // First-Improvement strategy: break out and restart search
+                                    goto end_of_search; 
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        end_of_search:;
+        
+        // --- Cleanup Phase ---
+        // Clean up empty routes dynamically if tails were completely swapped 
+        // in a way that left one route as just [Depot, Depot]
+        for (auto it = routes.begin(); it != routes.end(); ) {
+            if (it->size() <= 2) { 
+                it = routes.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
+void updated_relocate(const VRP &vrp, vector<vector<node_t>> &routes) {
+    bool improvement = true;
+
+    while (improvement) {
+        improvement = false;
+
+        for (size_t r1 = 0; r1 < routes.size(); r1++) {
+            for (size_t r2 = 0; r2 < routes.size(); r2++) {
+                
+                if (r1 == r2) continue;
+
+                auto &routeA = routes[r1];
+                auto &routeB = routes[r2];
+
+                if (routeA.size() <= 2) continue; 
+
+                for (size_t i = 1; i < routeA.size() - 1; i++) {
+                    node_t u = routeA[i];
+                    node_t t = routeA[i - 1]; 
+                    node_t w = routeA[i + 1]; 
+
+                    // 1. Calculate savings from removing 'u'
+                    double savings_A = vrp.get_dist(t, u) + vrp.get_dist(u, w) - vrp.get_dist(t, w);
+
+                    // OPTIMIZATION: Create modified Route A ONCE
+                    vector<node_t> new_routeA = routeA;
+                    new_routeA.erase(new_routeA.begin() + i);
+                    
+                    // OPTIMIZATION: Verify Route A once. Removing a node usually 
+                    // keeps it valid, but it's safe to check.
+                    if (!verify_single_route(vrp, new_routeA)) continue;
+
+                    vector<node_t> best_routeB;
+                    double best_gain = 0.0;
+                    
+                    // Iterate through every possible insertion point 'j' in Route B
+                    for (size_t j = 1; j < routeB.size(); j++) {
+                        node_t x = routeB[j - 1]; 
+                        node_t y = routeB[j];     
+
+                        double cost_B = vrp.get_dist(x, u) + vrp.get_dist(u, y) - vrp.get_dist(x, y);
+                        double total_gain = savings_A - cost_B;
+
+                        // OPTIMIZATION: Check total_gain FIRST to short-circuit the heavy operations
+                        if (total_gain > 1e-6 && total_gain > best_gain) {
+                            
+                            vector<node_t> new_routeB = routeB;
+                            new_routeB.insert(new_routeB.begin() + j, u);
+
+                            // Only verify Route B if it's the best distance so far
+                            if (verify_single_route(vrp, new_routeB)) {
+                                best_gain = total_gain;
+                                best_routeB = new_routeB;
+                            }
+                        }
+                    }
+                    
+                    // If a valid, improving move was found for 'u' in Route B
+                    if (best_gain > 1e-6) {
+                        cout << "Relocating customer " << u << " from route " << r1 << " to route " << r2 << endl;
+                        
+                        routeA = new_routeA;
+                        routeB = best_routeB;
+                        
+                        improvement = true;
+                        goto end_of_search;
+                    }
+                }
+            }
+        }
+        end_of_search:;
+        
+        // --- Cleanup Phase ---
+        for (auto it = routes.begin(); it != routes.end(); ) {
+            if (it->size() <= 2) { 
+                it = routes.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
+
 int main(int argc, char *argv[]) {
 VRP vrp;
   if (argc < 2) {
@@ -1018,9 +1295,9 @@ VRP vrp;
   vrp.read(argv[1]);
   vrp.cal_graph_dist();
 
-  chrono::steady_clock::time_point mid_start = chrono::steady_clock::now();
+  
   chrono::steady_clock::time_point total_start = chrono::steady_clock::now();
-
+  chrono::steady_clock::time_point pre_start = chrono::steady_clock::now();
   //Pre-processing - CLustering.
   int n_clusters;
   int sum_demand=0;
@@ -1033,9 +1310,14 @@ VRP vrp;
   vector<vector<node_t>> clusters;
   
   clusters=clustering_kmedoid(vrp,n_clusters); // you can change the number of clusters here. I have set it to 10 for now. You can experiment with different values and see how it affects the solution quality and runtime.
+  chrono::steady_clock::time_point pre_end = chrono::steady_clock::now();
 
+  chrono::steady_clock::time_point mid_start = chrono::steady_clock::now();
   // Implementing the Clark and Wright Savings Algorithm for CVRPTW
   auto routes = clarke_wright_cvrptw(vrp,clusters);
+  
+  chrono::steady_clock::time_point mid_end = chrono::steady_clock::now();
+
   
   print_routes(routes);
 
@@ -1044,18 +1326,27 @@ VRP vrp;
     route.insert(route.begin(),DEPOT);
     route.push_back(DEPOT);
   }
-  
-  inter_route_relocate(vrp,routes);
-
-  print_routes(routes);
-
-  chrono::steady_clock::time_point mid_end = chrono::steady_clock::now();
-
   weight_t min_cost = calculate_total_cost(vrp, routes);
   weight_t min_cost1=min_cost;
+
+  chrono::steady_clock::time_point post_start = chrono::steady_clock::now();
+  cout<<"Total Distance: "<<calculate_total_cost(vrp,routes)<<endl;
+  inter_route_relocate(vrp,routes);
+  print_routes(routes);
+  cout<<"Total Distance after inter_route_relocate: "<<calculate_total_cost(vrp, routes)<<endl;
+  
+  inter_route_swap(vrp,routes);
+  print_routes(routes);
+
+  cout<<"Total Distance after inter_route_swap: "<<calculate_total_cost(vrp, routes)<<endl;
+
+  inter_route_2opt_star(vrp,routes);
+  print_routes(routes);
+  cout<<"Total Distance after inter_route_2opt_star: "<<calculate_total_cost(vrp, routes)<<endl;
   auto best_routes = routes;
   
-  chrono::steady_clock::time_point post_start = chrono::steady_clock::now();
+  
+
 
   weight_t post_optimized_cost=min_cost;
   //best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
@@ -1067,6 +1358,7 @@ VRP vrp;
   print_routes(best_routes);
   if(verify_route(vrp,best_routes)){
     cerr<<"File: "<<argv[1]<<" ";
+    cerr<<"Preprocessing_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(pre_end - pre_start).count()*1.E-9)<<" s ";
     cerr<<"Route_Construction_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(mid_end - mid_start).count()*1.E-9)<<" s ";
     cerr<<"Post_Optimization_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(post_end - post_start).count()*1.E-9)<<" s ";
     cerr<<"Total_Cost-1: "<<min_cost1<<" ";

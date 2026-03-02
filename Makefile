@@ -31,19 +31,19 @@ test5:
 
 test6:
 	$(CXX) seq_CVRPTW_v6_clark.cpp -o seq.out
-	./seq.out r_50.txt
+	./seq.out r102.txt
 
 test7:
 	$(CXX) seq_CVRPTW_v7_clarkwithTW.cpp -o seq.out
-	./seq.out r_50.txt
-
+	./seq.out r102.txt
+	
 test8:
 	$(CXX) seq_CVRPTW_v8_clusterCwtw.cpp -o seq.out
-	./seq.out r_50.txt
+	./seq.out r102.txt
 
 build1:
 	$(CXX) seq_CVRPTW.cpp -o seq.out
-	
+
 build2:
 	$(CXX) seq_CVRPTW_v2_addFeasibleCust.cpp -o seq.out
 
