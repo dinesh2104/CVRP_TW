@@ -607,7 +607,7 @@ clarke_wright_cvrptw(const VRP &vrp,
             routes[best_j].clear();
             route_demand[best_j] = 0;
             // cout<<"Merged "<<from_<<" to "<<to_<<endl;
-            save_routes_snapshot(routes, "snap/step_" + to_string(step++) + ".csv");
+            //save_routes_snapshot(routes, "snap/step_" + to_string(step++) + ".csv");
 
         }
 
@@ -987,7 +987,7 @@ void inter_route_relocate(const VRP &vrp, vector<vector<node_t>> &routes) {
                             if (verify_single_route(vrp, new_routeA) && verify_single_route(vrp, new_routeB)) {
                                 
                                 // The move is valid and improves the cost! Apply it permanently.
-                                cout<<"Relocating customer "<<u<<" from route "<<r1<<" to route "<<r2<<" at position "<<j<<endl;
+                                // cout<<"Relocating customer "<<u<<" from route "<<r1<<" to route "<<r2<<" at position "<<j<<endl;
                                 routeA = new_routeA;
                                 routeB = new_routeB;
                                 
@@ -1081,7 +1081,7 @@ void inter_route_swap(const VRP &vrp, vector<vector<node_t>> &routes) {
                                 if (verify_single_route(vrp, new_routeA) && verify_single_route(vrp, new_routeB)) {
                                     
                                     // Apply the valid and improving move
-                                    cout<<"Swapping customer "<<u<<" in route "<<r1<<" with customer "<<v<<" in route "<<r2<<endl;
+                                    // cout<<"Swapping customer "<<u<<" in route "<<r1<<" with customer "<<v<<" in route "<<r2<<endl;
                                     routeA = new_routeA;
                                     routeB = new_routeB;
                                     
@@ -1170,7 +1170,7 @@ void inter_route_2opt_star(const VRP &vrp, vector<vector<node_t>> &routes) {
                                 if (verify_single_route(vrp, new_routeA) && verify_single_route(vrp, new_routeB)) {
                                     
                                     // Move is valid and improves the cost! Apply it.
-                                    cout<<"2-opt-Exchange"<<t<<"->"<<u<<"between"<<x<<"->"<<v<<endl;
+                                    // cout<<"2-opt-Exchange"<<t<<"->"<<u<<"between"<<x<<"->"<<v<<endl;
                                     routeA = new_routeA;
                                     routeB = new_routeB;
                                     
@@ -1259,7 +1259,7 @@ void updated_relocate(const VRP &vrp, vector<vector<node_t>> &routes) {
                     
                     // If a valid, improving move was found for 'u' in Route B
                     if (best_gain > 1e-6) {
-                        cout << "Relocating customer " << u << " from route " << r1 << " to route " << r2 << endl;
+                        // cout << "Relocating customer " << u << " from route " << r1 << " to route " << r2 << endl;
                         
                         routeA = new_routeA;
                         routeB = best_routeB;
@@ -1319,7 +1319,7 @@ VRP vrp;
   chrono::steady_clock::time_point mid_end = chrono::steady_clock::now();
 
   
-  print_routes(routes);
+  //print_routes(routes);
 
   //Adding 0....0 to the route.
   for(auto &route:routes){
@@ -1328,30 +1328,58 @@ VRP vrp;
   }
   weight_t min_cost = calculate_total_cost(vrp, routes);
   weight_t min_cost1=min_cost;
+  cout<<"Total Distance: "<<min_cost<<endl;
+  
+  // ------ starting post-optimization ------
 
   chrono::steady_clock::time_point post_start = chrono::steady_clock::now();
-  cout<<"Total Distance: "<<calculate_total_cost(vrp,routes)<<endl;
-  inter_route_relocate(vrp,routes);
-  print_routes(routes);
-  cout<<"Total Distance after inter_route_relocate: "<<calculate_total_cost(vrp, routes)<<endl;
+  //save_routes_snapshot(routes, "snap/step_0.csv");
+  // inter_route_2opt_star(vrp,routes);
+  // weight_t post_2opt_star_cost=calculate_total_cost(vrp, routes);
+
+  //------------------------
+
+  updated_relocate(vrp,routes);
+  weight_t post_updated_relocate_cost=calculate_total_cost(vrp, routes);
+  // print_routes(routes);
+  // cout<<"Total Distance after updated_relocate: "<<calculate_total_cost(vrp, routes)<<endl;
+
+  //-------------------------
+
+  // inter_route_relocate(vrp,routes);
+  // weight_t post_relocate_cost=calculate_total_cost(vrp, routes);
+  //save_routes_snapshot(routes, "snap/step_1.csv");
+  //print_routes(routes);
+  //cout<<"Total Distance after inter_route_relocate: "<<calculate_total_cost(vrp, routes)<<endl;
   
-  inter_route_swap(vrp,routes);
-  print_routes(routes);
+  // ----------------------------
 
-  cout<<"Total Distance after inter_route_swap: "<<calculate_total_cost(vrp, routes)<<endl;
+  // inter_route_swap(vrp,routes);
+  // weight_t post_swap_cost=calculate_total_cost(vrp, routes);
+  //save_routes_snapshot(routes, "snap/step_2.csv");
+  //print_routes(routes);
 
-  inter_route_2opt_star(vrp,routes);
-  print_routes(routes);
-  cout<<"Total Distance after inter_route_2opt_star: "<<calculate_total_cost(vrp, routes)<<endl;
+  //cout<<"Total Distance after inter_route_swap: "<<calculate_total_cost(vrp, routes)<<endl;
+
+  //-----------------------------------
+
+  // inter_route_2opt_star(vrp,routes);
+  // weight_t post_2opt_star_cost=calculate_total_cost(vrp, routes);
+  //save_routes_snapshot(routes, "snap/step_3.csv");
+  //print_routes(routes);
+  //cout<<"Total Distance after inter_route_2opt_star: "<<calculate_total_cost(vrp, routes)<<endl;
+
+  
+  
   auto best_routes = routes;
   
-  
-
-
   weight_t post_optimized_cost=min_cost;
   //best_routes=postProcessIt(vrp,best_routes,post_optimized_cost);
 
+
   chrono::steady_clock::time_point post_end = chrono::steady_clock::now();
+  // ----- ending post-optimization -----
+
   chrono::steady_clock::time_point total_end = chrono::steady_clock::now();
 
   min_cost=calculate_total_cost(vrp,best_routes);
@@ -1361,8 +1389,15 @@ VRP vrp;
     cerr<<"Preprocessing_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(pre_end - pre_start).count()*1.E-9)<<" s ";
     cerr<<"Route_Construction_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(mid_end - mid_start).count()*1.E-9)<<" s ";
     cerr<<"Post_Optimization_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(post_end - post_start).count()*1.E-9)<<" s ";
-    cerr<<"Total_Cost-1: "<<min_cost1<<" ";
-    cerr<<"Total_Cost-2: "<<min_cost<<" ";
+    cerr<<"Initial_Cost: "<<min_cost1<<" ";
+  
+    //cerr<<"Post_2opt_star_Cost: "<<post_2opt_star_cost<<" ";
+    cerr<<"Post_Updated_Relocate_Cost: "<<post_updated_relocate_cost<<" ";
+    //cerr<<"Post_Relocate_Cost: "<<post_relocate_cost<<" ";
+    //cerr<<"Post_Swap_Cost: "<<post_swap_cost<<" ";
+    
+    
+    cerr<<"Final_Cost: "<<min_cost<<" ";
     cerr<<"Total_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(total_end - total_start).count()*1.E-9)<<" s ";
     cerr<<"Vehicle_Used: "<<best_routes.size()<<" ";
     cerr<<"route_length: "<<max_length_of_route(best_routes)<<" ";

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-val=7
+val=8
 
 mkdir -p outputs$val
 make build$val

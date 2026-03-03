@@ -39,7 +39,7 @@ test7:
 	
 test8:
 	$(CXX) seq_CVRPTW_v8_clusterCwtw.cpp -o seq.out
-	./seq.out r102.txt
+	./seq.out r_50.txt
 
 build1:
 	$(CXX) seq_CVRPTW.cpp -o seq.out
@@ -67,6 +67,9 @@ build6:
 
 build7:
 	$(CXX) seq_CVRPTW_v7_clarkwithTW.cpp -o seq.out
+
+build8:
+	$(CXX) seq_CVRPTW_v8_clusterCwtw.cpp -o seq.out
 
 # Clean
 clean:
