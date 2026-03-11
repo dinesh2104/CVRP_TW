@@ -10,7 +10,7 @@ test1:
 	./seq.out r102.txt
 
 test2:
-	$(CXX) seq_CVRPTW_v2.cpp -o seq.out
+	$(CXX) seq_CVRPTW_v2_addFeasibleCust.cpp -o seq.out
 	./seq.out r102.txt
 
 test2.1:
@@ -41,6 +41,11 @@ test8:
 	$(CXX) seq_CVRPTW_v8_clusterCwtw.cpp -o seq.out
 	./seq.out r_50.txt
 
+test9:
+	$(CXX) seq_CVRPTW_v9_sweep.cpp -o seq.out
+	./seq.out r_50.txt
+
+
 build1:
 	$(CXX) seq_CVRPTW.cpp -o seq.out
 
@@ -70,6 +75,9 @@ build7:
 
 build8:
 	$(CXX) seq_CVRPTW_v8_clusterCwtw.cpp -o seq.out
+
+build9:
+	$(CXX) seq_CVRPTW_v9_sweep.cpp -o seq.out
 
 # Clean
 clean:

@@ -341,360 +341,6 @@ double compute_waiting_time(const VRP &vrp,
     return total_wait;
 }
 
-// -------------Different Clustering Methods-----------------
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-// Helper struct to hold angle data for sorting
-struct PolarCustomer {
-    int id;
-    double angle;
-    double demand;
-};
-
-// Assuming Depot is node 0, and customers are 1 to vrp.getSize() - 1
-vector<vector<int>> clustering_sweep(const VRP &vrp) {
-    int n = vrp.getSize();
-    vector<vector<int>> clusters;
-    
-    // Edge case safety
-    if (n <= 1) return clusters;
-
-    double depot_x = vrp.node[0].x;
-    double depot_y = vrp.node[0].y;
-    double max_capacity = vrp.getCapacity();
-
-    // --- PHASE 1: CALCULATE POLAR ANGLES ---
-    vector<PolarCustomer> sweep_list;
-    sweep_list.reserve(n - 1);
-
-    for (int i = 1; i < n; i++) {
-        double dx = vrp.node[i].x - depot_x;
-        double dy = vrp.node[i].y - depot_y;
-        
-        // atan2 returns an angle between -PI and PI
-        double angle = atan2(dy, dx);
-        
-        // Normalize angle to be strictly between 0 and 2*PI (0 to 360 degrees)
-        if (angle < 0) {
-            angle += 2.0 * M_PI;
-        }
-        
-        sweep_list.push_back({i, angle, vrp.node[i].demand});
-    }
-
-    // --- PHASE 2: SORT BY ANGLE ---
-    // This simulates the "radar sweep" counter-clockwise around the depot
-    sort(sweep_list.begin(), sweep_list.end(), 
-         [](const PolarCustomer &a, const PolarCustomer &b) {
-             return a.angle < b.angle;
-         });
-
-    // --- PHASE 3: SWEEP AND GROUP ---
-    vector<int> current_cluster;
-    double current_load = 0.0;
-
-    for (const auto& cust : sweep_list) {
-        // If adding this customer exceeds vehicle capacity...
-        if (current_load + cust.demand > max_capacity) {
-            
-            // ...save the current cluster (the pie slice is full)
-            if (!current_cluster.empty()) {
-                clusters.push_back(current_cluster);
-            }
-            
-            // ...and start a brand new cluster with this customer
-            current_cluster.clear();
-            current_cluster.push_back(cust.id);
-            current_load = cust.demand;
-            
-        } else {
-            // Customer fits, add them to the current cluster slice
-            current_cluster.push_back(cust.id);
-            current_load += cust.demand;
-        }
-    }
-
-    // Push the final remaining cluster
-    if (!current_cluster.empty()) {
-        clusters.push_back(current_cluster);
-    }
-
-    return clusters;
-}
-
-
-vector<vector<int>> clustering_hierarchical(const VRP &vrp, int k) {
-    int n = vrp.getSize();
-    
-    // Edge case safety
-    if (k <= 0) return {};
-    if (k >= n - 1) {
-        vector<vector<int>> clusters(n - 1);
-        for (int i = 1; i < n; i++) clusters[i-1].push_back(i);
-        return clusters;
-    }
-
-    // --- PHASE 1: INITIALIZATION ---
-    // Start with every customer as their own independent cluster
-    vector<vector<int>> active_clusters;
-    for (int i = 1; i < n; i++) {
-        active_clusters.push_back({i});
-    }
-
-    int num_clusters = active_clusters.size();
-    
-    // Initialize the distance matrix between all clusters
-    vector<vector<double>> dist_matrix(num_clusters, vector<double>(num_clusters, 0.0));
-
-    for (int i = 0; i < num_clusters; i++) {
-        for (int j = i + 1; j < num_clusters; j++) {
-            // Initially, distance between single-node clusters is just their geographical distance
-            // TIP: Use a spatio-temporal distance formula here for better VRPTW performance!
-            dist_matrix[i][j] = vrp.get_dist(active_clusters[i][0], active_clusters[j][0]);
-            dist_matrix[j][i] = dist_matrix[i][j];
-        }
-    }
-
-    // --- PHASE 2: AGGLOMERATIVE MERGING ---
-    // Keep merging the closest pair until we reach exactly 'k' clusters
-    while (num_clusters > k) {
-        double min_dist = numeric_limits<double>::max();
-        int merge_a = -1, merge_b = -1;
-
-        // 1. Find the two closest active clusters
-        for (int i = 0; i < active_clusters.size(); i++) {
-            if (active_clusters[i].empty()) continue; // Skip deactivated clusters
-
-            for (int j = i + 1; j < active_clusters.size(); j++) {
-                if (active_clusters[j].empty()) continue;
-
-                if (dist_matrix[i][j] < min_dist) {
-                    min_dist = dist_matrix[i][j];
-                    merge_a = i;
-                    merge_b = j;
-                }
-            }
-        }
-
-        // 2. Merge cluster B into cluster A
-        active_clusters[merge_a].insert(
-            active_clusters[merge_a].end(),
-            active_clusters[merge_b].begin(),
-            active_clusters[merge_b].end()
-        );
-
-        // Deactivate cluster B by emptying it
-        active_clusters[merge_b].clear();
-        num_clusters--;
-
-        // 3. Update the Distance Matrix (COMPLETE LINKAGE)
-        // The distance from the newly merged cluster A to any other cluster X 
-        // is the MAXIMUM of (distance from old A to X) and (distance from B to X).
-        for (int i = 0; i < active_clusters.size(); i++) {
-            if (i == merge_a || active_clusters[i].empty()) continue;
-
-            double new_dist = max(dist_matrix[merge_a][i], dist_matrix[merge_b][i]);
-            
-            dist_matrix[merge_a][i] = new_dist;
-            dist_matrix[i][merge_a] = new_dist;
-        }
-    }
-
-    // --- PHASE 3: CLEANUP ---
-    // Extract only the 'k' remaining active clusters
-    vector<vector<int>> final_clusters;
-    for (const auto& cluster : active_clusters) {
-        if (!cluster.empty()) {
-            final_clusters.push_back(cluster);
-        }
-    }
-
-    return final_clusters;
-}
-
-vector<vector<int>> clustering_kmeans_plus_plus(const VRP &vrp, int k) {
-    int n = vrp.getSize();
-    vector<vector<int>> clusters(k);
-    vector<int> centers;
-    
-    // Edge case safety
-    if (k <= 0) return clusters;
-    if (k >= n - 1) {
-        for (int i = 1; i < n; i++) clusters[i-1].push_back(i);
-        return clusters;
-    }
-
-    vector<bool> is_center(n, false);
-    
-    // Track the shortest distance from each node to its nearest center
-    vector<double> min_dist_to_center(n, numeric_limits<double>::max());
-
-    // Setup Random Number Generator
-    random_device rd;
-    mt19937 gen(rd()); // Standard mersenne_twister_engine
-
-    // --- PHASE 1: PICK FIRST CENTER RANDOMLY ---
-    uniform_int_distribution<> uniform_dist(1, n - 1);
-    int first_center = uniform_dist(gen);
-    
-    centers.push_back(first_center);
-    is_center[first_center] = true;
-
-    // --- PHASE 2: PICK REMAINING K-1 CENTERS (D^2 Weighting) ---
-    for (int c = 1; c < k; c++) {
-        int latest_center = centers.back();
-        double sum_d_squared = 0.0;
-
-        // 1. Update minimum distances for all non-center points
-        // and calculate the sum of squared distances
-        for (int i = 1; i < n; i++) {
-            if (is_center[i]) continue;
-
-            // Distance to the newly added center
-            double d = vrp.get_dist(i, latest_center);
-            
-            // Update the shortest distance to ANY center
-            if (d < min_dist_to_center[i]) {
-                min_dist_to_center[i] = d;
-            }
-
-            // K-means++ uses D(x)^2 for its probability weight
-            sum_d_squared += (min_dist_to_center[i] * min_dist_to_center[i]);
-        }
-
-        // 2. Generate a random target value between 0 and sum_d_squared
-        uniform_real_distribution<double> real_dist(0.0, sum_d_squared);
-        double random_target = real_dist(gen);
-
-        // 3. Find the point that corresponds to this random target
-        double cumulative_prob = 0.0;
-        int next_center = -1;
-
-        for (int i = 1; i < n; i++) {
-            if (is_center[i]) continue;
-
-            cumulative_prob += (min_dist_to_center[i] * min_dist_to_center[i]);
-            
-            if (cumulative_prob >= random_target) {
-                next_center = i;
-                break;
-            }
-        }
-
-        // Safety fallback (in case of floating point precision issues)
-        if (next_center == -1) {
-            for (int i = 1; i < n; i++) {
-                if (!is_center[i]) { next_center = i; break; }
-            }
-        }
-
-        centers.push_back(next_center);
-        is_center[next_center] = true;
-    }
-
-    // --- PHASE 3: ASSIGNMENT ---
-    // Assign all customers to their nearest center to form the clusters
-    for (int i = 1; i < n; i++) {
-        int best_center_idx = -1;
-        double min_dist = numeric_limits<double>::max();
-
-        for (int j = 0; j < k; j++) {
-            double d = vrp.get_dist(i, centers[j]);
-            if (d < min_dist) {
-                min_dist = d;
-                best_center_idx = j;
-            }
-        }
-        clusters[best_center_idx].push_back(i);
-    }
-
-    return clusters;
-}
-
-vector<vector<int>> clustering_k_far(const VRP &vrp, int k) {
-    int n = vrp.getSize();
-    vector<vector<int>> clusters(k);
-    vector<int> centers;
-    
-    // Edge case safety
-    if (k <= 0) return clusters;
-    if (k >= n - 1) {
-        // If K is greater than or equal to customers, everyone gets their own cluster
-        for (int i = 1; i < n; i++) clusters[i-1].push_back(i);
-        return clusters;
-    }
-
-    vector<bool> is_center(n, false);
-
-    // --- PHASE 1: INITIALIZE CENTERS ---
-    
-    // 1. Pick the first center: The customer absolutely furthest from the Depot
-    int first_center = -1;
-    double max_dist = -1.0;
-    
-    for (int i = 1; i < n; i++) {
-        double d = vrp.get_dist(0, i); 
-        if (d > max_dist) {
-            max_dist = d;
-            first_center = i;
-        }
-    }
-    centers.push_back(first_center);
-    is_center[first_center] = true;
-
-    // 2. Pick the remaining K-1 centers
-    for (int c = 1; c < k; c++) {
-        int next_center = -1;
-        double max_min_dist = -1.0;
-
-        for (int i = 1; i < n; i++) {
-            if (is_center[i]) continue;
-
-            // Find the minimum distance from customer 'i' to ANY existing center
-            double min_dist_to_centers = numeric_limits<double>::max();
-            for (int center : centers) {
-                // TIP for VRPTW: Replace get_dist with a Spatio-Temporal distance 
-                // function here if you want time windows factored into the clusters!
-                double d = vrp.get_dist(i, center); 
-                if (d < min_dist_to_centers) {
-                    min_dist_to_centers = d;
-                }
-            }
-
-            // We want the point where this minimum distance is the LARGEST
-            // (i.e., the point sitting furthest in the middle of nowhere)
-            if (min_dist_to_centers > max_min_dist) {
-                max_min_dist = min_dist_to_centers;
-                next_center = i;
-            }
-        }
-        centers.push_back(next_center);
-        is_center[next_center] = true;
-    }
-
-    // --- PHASE 2: ASSIGNMENT ---
-    
-    // 3. Assign all customers to their nearest center
-    for (int i = 1; i < n; i++) {
-        int best_center_idx = -1;
-        double min_dist = numeric_limits<double>::max();
-
-        for (int j = 0; j < k; j++) {
-            double d = vrp.get_dist(i, centers[j]);
-            if (d < min_dist) {
-                min_dist = d;
-                best_center_idx = j;
-            }
-        }
-        // Add customer 'i' (even if they are a center) to the nearest cluster
-        clusters[best_center_idx].push_back(i);
-    }
-
-    return clusters;
-}
 
 vector<vector<int>> clustering_kmedoid(VRP vrp,int k){
   int n=vrp.getSize()-1;
@@ -768,8 +414,6 @@ vector<vector<int>> clustering_kmedoid(VRP vrp,int k){
   }
   return clusters;
 }
-
-//------------------------clarke wright for each cluster------------------------
 
 vector<vector<node_t>>
 clarke_wright_cvrptw(const VRP &vrp,
@@ -1639,6 +1283,13 @@ void updated_relocate(const VRP &vrp, vector<vector<node_t>> &routes) {
     }
 }
 
+// ----------------------------------------------
+
+vector<vector<node_t>> generate_initial_routes(const VRP &vrp) {
+    vector<vector<node_t>> initial_routes;   
+    
+}
+
 
 int main(int argc, char *argv[]) {
 VRP vrp;
@@ -1661,32 +1312,14 @@ VRP vrp;
     sum_demand+=vrp.node[i].demand;
   }
   n_clusters=sum_demand/vrp.getCapacity();
-  
 
 
-  vector<vector<node_t>> clusters;
-  
-  
-
-  clusters=clustering_hierarchical(vrp,11);
-  // clusters=clustering_kmeans_plus_plus(vrp,n_clusters);
-  // clusters=clustering_k_far(vrp,n_clusters);
-  //clusters=clustering_sweep(vrp); 
-  
-  for(int i=0;i<clusters.size();i++){
-    cout<<"Cluster "<<i<<": ";
-    for(auto node:clusters[i]){
-      cout<<node<<" ";
-    }
-    cout<<endl;
-  }
-  exit(0);
   
   chrono::steady_clock::time_point pre_end = chrono::steady_clock::now();
 
   chrono::steady_clock::time_point mid_start = chrono::steady_clock::now();
   // Implementing the Clark and Wright Savings Algorithm for CVRPTW
-  auto routes = clarke_wright_cvrptw(vrp,clusters);
+  auto routes = generate_initial_routes(vrp);
   
   chrono::steady_clock::time_point mid_end = chrono::steady_clock::now();
 
@@ -1711,23 +1344,23 @@ VRP vrp;
 
   //------------------------
 
-  // updated_relocate(vrp,routes);
-  // weight_t post_updated_relocate_cost=calculate_total_cost(vrp, routes);
+  updated_relocate(vrp,routes);
+  weight_t post_updated_relocate_cost=calculate_total_cost(vrp, routes);
   // print_routes(routes);
   // cout<<"Total Distance after updated_relocate: "<<calculate_total_cost(vrp, routes)<<endl;
 
   //-------------------------
 
-  inter_route_relocate(vrp,routes);
-  weight_t post_relocate_cost=calculate_total_cost(vrp, routes);
+  // inter_route_relocate(vrp,routes);
+  // weight_t post_relocate_cost=calculate_total_cost(vrp, routes);
   //save_routes_snapshot(routes, "snap/step_1.csv");
   //print_routes(routes);
   //cout<<"Total Distance after inter_route_relocate: "<<calculate_total_cost(vrp, routes)<<endl;
   
   // ----------------------------
 
-  inter_route_swap(vrp,routes);
-  weight_t post_swap_cost=calculate_total_cost(vrp, routes);
+  // inter_route_swap(vrp,routes);
+  // weight_t post_swap_cost=calculate_total_cost(vrp, routes);
   //save_routes_snapshot(routes, "snap/step_2.csv");
   //print_routes(routes);
 
@@ -1735,8 +1368,8 @@ VRP vrp;
 
   //-----------------------------------
 
-  inter_route_2opt_star(vrp,routes);
-  weight_t post_2opt_star_cost=calculate_total_cost(vrp, routes);
+  // inter_route_2opt_star(vrp,routes);
+  // weight_t post_2opt_star_cost=calculate_total_cost(vrp, routes);
   //save_routes_snapshot(routes, "snap/step_3.csv");
   //print_routes(routes);
   //cout<<"Total Distance after inter_route_2opt_star: "<<calculate_total_cost(vrp, routes)<<endl;
@@ -1763,10 +1396,10 @@ VRP vrp;
     cerr<<"Post_Optimization_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(post_end - post_start).count()*1.E-9)<<" s ";
     cerr<<"Initial_Cost: "<<min_cost1<<" ";
   
-    // cerr<<"Post_Updated_Relocate_Cost: "<<post_updated_relocate_cost<<" ";
-    cerr<<"Post_Relocate_Cost: "<<post_relocate_cost<<" ";
-    cerr<<"Post_Swap_Cost: "<<post_swap_cost<<" ";
-    cerr<<"Post_2opt_star_Cost: "<<post_2opt_star_cost<<" ";
+    //cerr<<"Post_2opt_star_Cost: "<<post_2opt_star_cost<<" ";
+    cerr<<"Post_Updated_Relocate_Cost: "<<post_updated_relocate_cost<<" ";
+    //cerr<<"Post_Relocate_Cost: "<<post_relocate_cost<<" ";
+    //cerr<<"Post_Swap_Cost: "<<post_swap_cost<<" ";
     
     
     cerr<<"Final_Cost: "<<min_cost<<" ";
