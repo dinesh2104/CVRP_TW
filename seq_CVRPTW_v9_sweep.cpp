@@ -374,46 +374,150 @@ vector<vector<int>> clustering_sweep(const VRP &vrp) {
         double dx = vrp.node[i].x - depot_x;
         double dy = vrp.node[i].y - depot_y;
         
-        // atan2 returns an angle between -PI and PI
         double angle = atan2(dy, dx);
-        
-        // Normalize angle to be strictly between 0 and 2*PI (0 to 360 degrees)
         if (angle < 0) {
             angle += 2.0 * M_PI;
         }
-        
         sweep_list.push_back({i, angle, vrp.node[i].demand});
     }
 
     // --- PHASE 2: SORT BY ANGLE ---
-    // This simulates the "radar sweep" counter-clockwise around the depot
     sort(sweep_list.begin(), sweep_list.end(), 
          [](const PolarCustomer &a, const PolarCustomer &b) {
              return a.angle < b.angle;
          });
 
-    // --- PHASE 3: SWEEP AND GROUP ---
+    // --- PHASE 3: RANDOMIZED SWEEP START ---
+    // Generate a random starting index between 0 and sweep_list.size() - 1
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dist(0, sweep_list.size() - 1);
+    
+    int start_index = dist(gen);
+
+    // --- PHASE 4: SWEEP AND GROUP (CIRCULAR) ---
     vector<int> current_cluster;
     double current_load = 0.0;
+    int num_customers = sweep_list.size();
 
-    for (const auto& cust : sweep_list) {
+    // Loop exactly 'num_customers' times, but offset by 'start_index'
+    for (int step = 0; step < num_customers; step++) {
+        
+        // Modulo operator (%) makes the index wrap back to 0 when it hits the end of the array
+        int actual_index = (start_index + step) % num_customers;
+        const auto& cust = sweep_list[actual_index];
+
         // If adding this customer exceeds vehicle capacity...
         if (current_load + cust.demand > max_capacity) {
             
-            // ...save the current cluster (the pie slice is full)
             if (!current_cluster.empty()) {
                 clusters.push_back(current_cluster);
             }
             
-            // ...and start a brand new cluster with this customer
             current_cluster.clear();
             current_cluster.push_back(cust.id);
             current_load = cust.demand;
             
         } else {
-            // Customer fits, add them to the current cluster slice
             current_cluster.push_back(cust.id);
             current_load += cust.demand;
+        }
+    }
+
+    if (!current_cluster.empty()) {
+        clusters.push_back(current_cluster);
+    }
+
+    return clusters;
+}
+
+vector<vector<int>> clustering_angle_sweep(const VRP &vrp, double angle_range) {
+    int n = vrp.getSize();
+    vector<vector<int>> clusters;
+    
+    // Edge case safety
+    if (n <= 1) return clusters;
+
+    double depot_x = vrp.node[0].x;
+    double depot_y = vrp.node[0].y;
+
+    // --- PHASE 1: CALCULATE POLAR ANGLES (IN DEGREES) ---
+    vector<PolarCustomer> sweep_list;
+    sweep_list.reserve(n - 1);
+
+    for (int i = 1; i < n; i++) {
+        double dx = vrp.node[i].x - depot_x;
+        double dy = vrp.node[i].y - depot_y;
+        
+        // atan2 returns an angle in radians between -PI and PI
+        double angle_rad = atan2(dy, dx);
+        
+        // Convert radians to degrees
+        double angle_deg = angle_rad * (180.0 / M_PI);
+        
+        // Normalize angle to be strictly between 0 and 360 degrees
+        if (angle_deg < 0) {
+            angle_deg += 360.0;
+        }
+        
+        sweep_list.push_back({i, angle_deg, vrp.node[i].demand});
+    }
+
+    // --- PHASE 2: SORT BY ANGLE ---
+    sort(sweep_list.begin(), sweep_list.end(), 
+         [](const PolarCustomer &a, const PolarCustomer &b) {
+             return a.angle < b.angle;
+         });
+         
+
+    // --- PHASE 3: RANDOMIZED SWEEP START ---
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dist(0, sweep_list.size() - 1);
+    
+    int start_index = dist(gen);
+
+    // --- PHASE 4: SWEEP AND GROUP BY ANGLE RANGE ONLY ---
+    vector<int> current_cluster;
+    double current_sector_start_angle = -1.0; 
+    
+    int num_customers = sweep_list.size();
+
+    for (int step = 0; step < num_customers; step++) {
+        
+        int actual_index = (start_index + step) % num_customers;
+        const auto& cust = sweep_list[actual_index];
+
+        // If this is the very first customer in a new cluster
+        if (current_cluster.empty()) {
+            current_cluster.push_back(cust.id);
+            current_sector_start_angle = cust.angle; // Mark the starting angle (in degrees)
+            continue;
+        }
+
+        // Calculate angular distance from the start of the current sector
+        double angular_diff = cust.angle - current_sector_start_angle;
+        
+        // Wrap around logic: if we cross the 360-degree line back to 0
+        // (e.g., sector starts at 350° and current customer is at 10°, diff is -340°, becomes 20°)
+        if (angular_diff < 0) {
+            angular_diff += 360.0; 
+        }
+
+        // --- CUT CONDITION: Exceeds Angle Range (in degrees) ONLY ---
+        if (angular_diff > angle_range) {
+            
+            // Save current cluster
+            clusters.push_back(current_cluster);
+            
+            // Start a new cluster with this customer
+            current_cluster.clear();
+            current_cluster.push_back(cust.id);
+            current_sector_start_angle = cust.angle; // Reset the sector start angle
+            
+        } else {
+            // Fits within the angle range
+            current_cluster.push_back(cust.id);
         }
     }
 
@@ -1322,8 +1426,11 @@ VRP vrp;
 
   vector<vector<node_t>> clusters;
   
-  clusters=clustering_sweep(vrp); 
-  
+  // clusters=clustering_sweep(vrp); 
+
+  double angle_range = stod(argv[2]);
+  clusters=clustering_angle_sweep(vrp,angle_range);
+
   for(int i=0;i<clusters.size();i++){
     cout<<"Cluster "<<i<<": ";
     for(auto node:clusters[i]){
@@ -1331,7 +1438,7 @@ VRP vrp;
     }
     cout<<endl;
   }
-  exit(0);
+  //exit(0);
   
   chrono::steady_clock::time_point pre_end = chrono::steady_clock::now();
 
