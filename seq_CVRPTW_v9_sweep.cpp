@@ -1426,10 +1426,10 @@ VRP vrp;
 
   vector<vector<node_t>> clusters;
   
-  // clusters=clustering_sweep(vrp); 
+  clusters=clustering_sweep(vrp); 
 
-  double angle_range = stod(argv[2]);
-  clusters=clustering_angle_sweep(vrp,angle_range);
+  // double angle_range = stod(argv[2]);
+  // clusters=clustering_angle_sweep(vrp,angle_range);
 
   for(int i=0;i<clusters.size();i++){
     cout<<"Cluster "<<i<<": ";

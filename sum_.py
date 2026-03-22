@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 
-filename = "outputs9.1/result.csv"
+filename = "outputs10/result.csv"
 group_size = 12
 
 groups = []

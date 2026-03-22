@@ -45,6 +45,9 @@ test9:
 	$(CXX) seq_CVRPTW_v9_sweep.cpp -o seq.out
 	./seq.out r_50.txt
 
+test10:
+	$(CXX) seq_CVRPTW_v10_pq.cpp -o seq.out
+	./seq.out r102.txt
 
 build1:
 	$(CXX) seq_CVRPTW.cpp -o seq.out
@@ -78,6 +81,9 @@ build8:
 
 build9:
 	$(CXX) seq_CVRPTW_v9_sweep.cpp -o seq.out
+
+build10:
+	$(CXX) seq_CVRPTW_v10_pq.cpp -o seq.out
 
 # Clean
 clean:

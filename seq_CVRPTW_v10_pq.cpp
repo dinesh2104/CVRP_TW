@@ -8,7 +8,8 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>  //stringstream
-
+#include<queue>
+#include<bits/stdc++.h>
 #include <random>
 #include <chrono>  //timing CPU
 
@@ -43,7 +44,7 @@ class Edge {
 
 class Point {
   public:
-  //~ int id; // may be needed later for SS.
+  int id; 
   point_t x;
   point_t y;
   demand_t demand;
@@ -181,6 +182,7 @@ unsigned VRP::read(string filename) {
     double x, y, demand, ready, due, service;
     while (in >> id >> x >> y >> demand >> ready >> due >> service) {
         Point p; 
+        p.id = id;
         p.x = x;
         p.y = y;
         p.demand = demand;
@@ -1285,9 +1287,112 @@ void updated_relocate(const VRP &vrp, vector<vector<node_t>> &routes) {
 
 // ----------------------------------------------
 
+struct VehicleState {
+    int route_index;      // The index of this vehicle's route in initial_routes
+    double current_time;  // The time the vehicle finishes service at its last node
+    double current_load;  // Total accumulated demand
+    int last_node_id;     // The ID of the last visited customer
+
+    // We want a Min-Heap based on current_time so the vehicle that finishes earliest 
+    // is always at the top of the priority queue.
+    bool operator>(const VehicleState& other) const {
+        return current_time > other.current_time;
+    }
+};
+
 vector<vector<node_t>> generate_initial_routes(const VRP &vrp) {
-    vector<vector<node_t>> initial_routes;   
+    vector<vector<node_t>> initial_routes;
     
+    if (vrp.getSize() <= 1) return initial_routes;
+
+    // --- 1) EXTRACT AND SORT CUSTOMERS BY DEADLINE (EDF) ---
+    vector<Point> unassigned_customers;
+    for (size_t i = 1; i < vrp.getSize(); ++i) { 
+        unassigned_customers.push_back(vrp.node[i]);
+    }
+
+    sort(unassigned_customers.begin(), unassigned_customers.end(), 
+         [](const Point& a, const Point& b) {
+             return a.latestTime < b.latestTime; 
+         });
+
+    priority_queue<VehicleState, vector<VehicleState>, greater<VehicleState>> pq;
+    int route_counter = 0;
+
+    // --- 2) ASSIGN CUSTOMERS TO VEHICLES ---
+    for (const auto& cust : unassigned_customers) {
+        vector<VehicleState> temp_popped_vehicles;
+        bool assigned = false;
+
+        // Search active vehicles
+        while (!pq.empty()) {
+            VehicleState v = pq.top();
+            pq.pop();
+
+            double travel_time = vrp.get_dist(v.last_node_id, cust.id);
+            double arrival_time = v.current_time + travel_time;
+
+            // --- CONSTRAINTS CHECK: Capacity & Delivery Time ---
+            if (v.current_load + cust.demand <= vrp.getCapacity() && arrival_time <= cust.latestTime) {
+                
+                double start_service = max(arrival_time, (double)cust.earlyTime);
+                double finish_time = start_service + cust.serviceTime;
+                double return_to_depot_time = finish_time + vrp.get_dist(cust.id, vrp.node[0].id);
+
+                // --- CONSTRAINT CHECK: Depot Return Time ---
+                if (return_to_depot_time <= vrp.node[0].latestTime) {
+                    
+                    v.current_time = finish_time;
+                    v.current_load += cust.demand;
+                    v.last_node_id = cust.id;
+
+                    initial_routes[v.route_index].push_back(cust.id);
+                    pq.push(v);
+                    assigned = true;
+                    break;
+                }
+            }
+            temp_popped_vehicles.push_back(v);
+        }
+
+        // Restore unfeasible vehicles
+        for (const auto& v : temp_popped_vehicles) {
+            pq.push(v);
+        }
+
+        // Spawn a NEW vehicle if no active vehicle could take the job
+        if (!assigned) {
+            double travel_time_from_depot = vrp.get_dist(vrp.node[0].id, cust.id);
+            double arrival_time = 0.0 + travel_time_from_depot; 
+
+            if (arrival_time <= cust.latestTime) {
+                double start_service = max(arrival_time, (double)cust.earlyTime);
+                double finish_time = start_service + cust.serviceTime;
+                double return_to_depot_time = finish_time + vrp.get_dist(cust.id, vrp.node[0].id);
+
+                if (return_to_depot_time <= vrp.node[0].latestTime) {
+                    VehicleState new_v;
+                    new_v.route_index = route_counter++;
+                    new_v.current_time = finish_time;
+                    new_v.current_load = cust.demand;
+                    new_v.last_node_id = cust.id;
+                    pq.push(new_v);
+
+                    vector<node_t> new_route;
+                    new_route.push_back(vrp.node[0].id); 
+                    new_route.push_back(cust.id);        
+                    initial_routes.push_back(new_route);
+                }
+            }
+        }
+    }
+
+    // --- 3) CLOSE ROUTES (RETURN TO DEPOT) ---
+    for (auto& route : initial_routes) {
+        route.push_back(vrp.node[0].id);
+    }
+
+    return initial_routes;
 }
 
 
@@ -1320,6 +1425,9 @@ VRP vrp;
   chrono::steady_clock::time_point mid_start = chrono::steady_clock::now();
   // Implementing the Clark and Wright Savings Algorithm for CVRPTW
   auto routes = generate_initial_routes(vrp);
+
+  
+
   
   chrono::steady_clock::time_point mid_end = chrono::steady_clock::now();
 
@@ -1327,10 +1435,10 @@ VRP vrp;
   //print_routes(routes);
 
   //Adding 0....0 to the route.
-  for(auto &route:routes){
-    route.insert(route.begin(),DEPOT);
-    route.push_back(DEPOT);
-  }
+  // for(auto &route:routes){
+  //   route.insert(route.begin(),DEPOT);
+  //   route.push_back(DEPOT);
+  // }
   weight_t min_cost = calculate_total_cost(vrp, routes);
   weight_t min_cost1=min_cost;
   cout<<"Total Distance: "<<min_cost<<endl;
@@ -1344,23 +1452,23 @@ VRP vrp;
 
   //------------------------
 
-  updated_relocate(vrp,routes);
-  weight_t post_updated_relocate_cost=calculate_total_cost(vrp, routes);
+  // updated_relocate(vrp,routes);
+  // weight_t post_updated_relocate_cost=calculate_total_cost(vrp, routes);
   // print_routes(routes);
   // cout<<"Total Distance after updated_relocate: "<<calculate_total_cost(vrp, routes)<<endl;
 
   //-------------------------
 
-  // inter_route_relocate(vrp,routes);
-  // weight_t post_relocate_cost=calculate_total_cost(vrp, routes);
+  inter_route_relocate(vrp,routes);
+  weight_t post_relocate_cost=calculate_total_cost(vrp, routes);
   //save_routes_snapshot(routes, "snap/step_1.csv");
   //print_routes(routes);
   //cout<<"Total Distance after inter_route_relocate: "<<calculate_total_cost(vrp, routes)<<endl;
   
   // ----------------------------
 
-  // inter_route_swap(vrp,routes);
-  // weight_t post_swap_cost=calculate_total_cost(vrp, routes);
+  inter_route_swap(vrp,routes);
+  weight_t post_swap_cost=calculate_total_cost(vrp, routes);
   //save_routes_snapshot(routes, "snap/step_2.csv");
   //print_routes(routes);
 
@@ -1368,8 +1476,8 @@ VRP vrp;
 
   //-----------------------------------
 
-  // inter_route_2opt_star(vrp,routes);
-  // weight_t post_2opt_star_cost=calculate_total_cost(vrp, routes);
+  inter_route_2opt_star(vrp,routes);
+  weight_t post_2opt_star_cost=calculate_total_cost(vrp, routes);
   //save_routes_snapshot(routes, "snap/step_3.csv");
   //print_routes(routes);
   //cout<<"Total Distance after inter_route_2opt_star: "<<calculate_total_cost(vrp, routes)<<endl;
@@ -1396,10 +1504,10 @@ VRP vrp;
     cerr<<"Post_Optimization_Time: "<<(double)(chrono::duration_cast<chrono::nanoseconds>(post_end - post_start).count()*1.E-9)<<" s ";
     cerr<<"Initial_Cost: "<<min_cost1<<" ";
   
-    //cerr<<"Post_2opt_star_Cost: "<<post_2opt_star_cost<<" ";
-    cerr<<"Post_Updated_Relocate_Cost: "<<post_updated_relocate_cost<<" ";
-    //cerr<<"Post_Relocate_Cost: "<<post_relocate_cost<<" ";
-    //cerr<<"Post_Swap_Cost: "<<post_swap_cost<<" ";
+    cerr<<"Post_2opt_star_Cost: "<<post_2opt_star_cost<<" ";
+    //cerr<<"Post_Updated_Relocate_Cost: "<<post_updated_relocate_cost<<" ";
+    cerr<<"Post_Relocate_Cost: "<<post_relocate_cost<<" ";
+    cerr<<"Post_Swap_Cost: "<<post_swap_cost<<" ";
     
     
     cerr<<"Final_Cost: "<<min_cost<<" ";
