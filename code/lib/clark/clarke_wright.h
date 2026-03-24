@@ -11,4 +11,7 @@ std::vector<std::vector<node_t>> clarke_wright_cvrptw(
 std::vector<std::vector<node_t>> clarke_wright_cvrptw_parallel(
     const VRP &vrp, const std::vector<std::vector<int>> &clusters);
 
+std::vector<std::vector<node_t>> clarke_wright_cvrptw_v2(
+    const VRP &vrp, const std::vector<std::vector<int>> &clusters);
+
 #endif

@@ -64,19 +64,20 @@ int main(int argc, char *argv[]) {
 
   chrono::steady_clock::time_point post_start = chrono::steady_clock::now();
 
-  inter_route_relocate(vrp, routes);
+  inter_route_relocate_parallel(vrp, routes);
   weight_t post_relocate_cost = calculate_total_cost(vrp, routes);
 
-  inter_route_swap(vrp, routes);
+  inter_route_swap_parallel(vrp, routes);
   weight_t post_swap_cost = calculate_total_cost(vrp, routes);
 
-  inter_route_2opt_star(vrp, routes);
+  inter_route_2opt_star_parallel(vrp, routes);
   weight_t post_2opt_star_cost = calculate_total_cost(vrp, routes);
 
   auto best_routes = routes;
   weight_t post_optimized_cost = min_cost;
-  (void)post_optimized_cost;
-  // best_routes = postProcessIt(vrp, best_routes, post_optimized_cost);
+ 
+  best_routes = postProcessIt(vrp, best_routes, post_optimized_cost);
+  weight_t post_process_it_cost = calculate_total_cost(vrp, best_routes);
 
   chrono::steady_clock::time_point post_end = chrono::steady_clock::now();
   chrono::steady_clock::time_point total_end = chrono::steady_clock::now();
@@ -108,6 +109,7 @@ int main(int argc, char *argv[]) {
     cerr << "Post_Relocate_Cost: " << post_relocate_cost << " ";
     cerr << "Post_Swap_Cost: " << post_swap_cost << " ";
     cerr << "Post_2opt_star_Cost: " << post_2opt_star_cost << " ";
+    cerr << "Intra_Route_Optimization_Cost: " << post_process_it_cost << " ";
     cerr << "Final_Cost: " << min_cost << " ";
     cerr << "Total_Time: "
          << static_cast<double>(

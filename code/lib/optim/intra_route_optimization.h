@@ -20,4 +20,10 @@ std::vector<std::vector<node_t>> postprocess_2OPT(
 std::vector<std::vector<node_t>> postProcessIt(
     const VRP &vrp, std::vector<std::vector<node_t>> &final_routes, weight_t &minCost);
 
-#endif
+std::vector<std::vector<node_t>> postprocess_tsp_approx_parallel(
+    const VRP &vrp, std::vector<std::vector<node_t>> &solRoutes);
+std::vector<std::vector<node_t>> postprocess_2OPT_parallel(
+    const VRP &vrp, std::vector<std::vector<node_t>> &final_routes);
+
+
+    #endif

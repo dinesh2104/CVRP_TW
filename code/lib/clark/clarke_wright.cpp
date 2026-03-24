@@ -175,6 +175,205 @@ vector<vector<node_t>> clarke_wright_cvrptw_parallel(
   double alpha = 0.7;
   double beta = 0.3;
 
+  vector<vector<node_t>> final_routes;
+
+  // Lambda to compute arrival time and check time windows.
+  // Thread-safe because it only reads from 'vrp'.
+  auto compute_arrival_time = [&](const vector<node_t> &route) {
+    double time = 0.0;
+    node_t prev = 0; // Assuming 0 is the depot
+
+    for (node_t node : route) {
+      time += vrp.get_dist(prev, node);
+      
+      // Wait if we arrive before the early time
+      if (time < vrp.node[node].earlyTime) {
+        time = vrp.node[node].earlyTime;
+      }
+      // Invalid if we arrive after the latest time
+      if (time > vrp.node[node].latestTime) {
+        return -1.0;
+      }
+      
+      time += vrp.node[node].serviceTime;
+      prev = node;
+    }
+
+    return time;
+  };
+
+  auto verify_route = [&](const vector<node_t> &route) {
+    return compute_arrival_time(route) >= 0;
+  };
+
+  // OUTER LOOP: Iterate sequentially through each cluster
+  for (const auto &cluster : clusters) {
+    vector<vector<node_t>> routes;
+    vector<double> route_demand;
+
+    // Initialize every node as its own single-stop route
+    for (auto node : cluster) {
+      routes.push_back({node});
+      route_demand.push_back(vrp.node[node].demand);
+    }
+
+    // Merge loop: Continues until no more valid savings are found
+    while (true) {
+      double global_best_saving = -1e18;
+      int global_best_i = -1;
+      int global_best_j = -1;
+      vector<node_t> global_best_merge;
+
+      // --- OPENMP PARALLEL REGION BEGINS ---
+      // Spawns threads to search for the best merge simultaneously
+      #pragma omp parallel 
+      {
+        // Thread-local tracking variables (prevents race conditions)
+        double local_best_saving = -1e18;
+        int local_best_i = -1;
+        int local_best_j = -1;
+        vector<node_t> local_best_merge;
+
+        // Distribute the r_i loop dynamically across threads
+        #pragma omp for schedule(dynamic) nowait
+        for (int r_i = 0; r_i < static_cast<int>(routes.size()); r_i++) {
+          if (routes[r_i].empty()) continue;
+
+          for (int r_j = r_i + 1; r_j < static_cast<int>(routes.size()); r_j++) {
+            if (routes[r_j].empty()) continue;
+            
+            // Capacity constraint check
+            if (route_demand[r_i] + route_demand[r_j] > vrp.getCapacity()) {
+              continue;
+            }
+
+            auto &Ri = routes[r_i];
+            auto &Rj = routes[r_j];
+
+            node_t i1 = Ri.front();
+            node_t i2 = Ri.back();
+            node_t j1 = Rj.front();
+            node_t j2 = Rj.back();
+
+            double arrival_i_end = compute_arrival_time(Ri);
+            double arrival_j_end = compute_arrival_time(Rj);
+            if (arrival_i_end < 0 || arrival_j_end < 0) continue;
+
+            struct Candidate {
+              node_t from, to;
+              vector<node_t> merged;
+            };
+
+            vector<Candidate> candidates;
+
+            // Option 1: Ri -> Rj
+            {
+              vector<node_t> merged = Ri;
+              merged.insert(merged.end(), Rj.begin(), Rj.end());
+              candidates.push_back({i2, j1, merged});
+            }
+
+            // Option 2: Rj -> Ri
+            {
+              vector<node_t> merged = Rj;
+              merged.insert(merged.end(), Ri.begin(), Ri.end());
+              candidates.push_back({j2, i1, merged});
+            }
+
+            // Option 3: Reversed(Ri) -> Rj
+            {
+              vector<node_t> Ri_rev = Ri;
+              reverse(Ri_rev.begin(), Ri_rev.end());
+              vector<node_t> merged = Ri_rev;
+              merged.insert(merged.end(), Rj.begin(), Rj.end());
+              candidates.push_back({i1, j1, merged});
+            }
+
+            // Option 4: Ri -> Reversed(Rj)
+            {
+              vector<node_t> Rj_rev = Rj;
+              reverse(Rj_rev.begin(), Rj_rev.end());
+              vector<node_t> merged = Ri;
+              merged.insert(merged.end(), Rj_rev.begin(), Rj_rev.end());
+              candidates.push_back({i2, j2, merged});
+            }
+
+            // Evaluate all valid candidate merges
+            for (auto &cand : candidates) {
+              node_t from = cand.from;
+              node_t to = cand.to;
+
+              double arrival_from = compute_arrival_time((from == i2 || from == i1) ? Ri : Rj);
+              if (arrival_from < 0) continue;
+
+              double dist_saving = vrp.get_dist(0, from) + vrp.get_dist(0, to) - vrp.get_dist(from, to);
+              double arrival_to = arrival_from + vrp.get_dist(from, to);
+              double waiting = 0.0;
+              
+              if (arrival_to < vrp.node[to].earlyTime) {
+                waiting = vrp.node[to].earlyTime - arrival_to;
+              }
+
+              double total_saving = alpha * dist_saving - beta * waiting;
+              
+              // Time window verification
+              if (!verify_route(cand.merged)) continue;
+
+              // UPDATE LOCAL BEST (Thread-Safe)
+              if (total_saving > local_best_saving) {
+                local_best_saving = total_saving;
+                local_best_i = r_i;
+                local_best_j = r_j;
+                local_best_merge = cand.merged;
+              }
+            }
+          }
+        }
+
+        // --- GLOBAL SYNCHRONIZATION ---
+        // Once a thread finishes its loop chunk, it safely compares its best 
+        // against the global best inside a critical lock.
+        #pragma omp critical
+        {
+          if (local_best_saving > global_best_saving) {
+            global_best_saving = local_best_saving;
+            global_best_i = local_best_i;
+            global_best_j = local_best_j;
+            global_best_merge = std::move(local_best_merge);
+          }
+        }
+      } 
+      // --- OPENMP PARALLEL REGION ENDS ---
+
+      // If no thread found a valid saving, stop merging for this cluster
+      if (global_best_saving <= 0) {
+        break;
+      }
+
+      // Apply the absolute best merge found globally
+      routes[global_best_i] = std::move(global_best_merge);
+      route_demand[global_best_i] += route_demand[global_best_j];
+      routes[global_best_j].clear(); // Empty the old route
+      route_demand[global_best_j] = 0;
+    }
+
+    // Save finalized routes from this cluster to the master list
+    for (auto &route : routes) {
+      if (!route.empty()) {
+        final_routes.push_back(route);
+      }
+    }
+  }
+
+  return final_routes;
+}
+
+vector<vector<node_t>> clarke_wright_cvrptw_v2(
+    const VRP &vrp, const vector<vector<int>> &clusters) {
+  
+  double alpha = 0.7;
+  double beta = 0.3;
+
   // These lambdas only read from the const 'vrp' object, 
   // so they are perfectly thread-safe to share across all threads.
   auto compute_arrival_time = [&](const vector<node_t> &route) {

@@ -30,5 +30,6 @@ run: $(TARGET)
 
 clean:
 	rm -f $(TARGET) $(OBJS) $(DEPS)
+	rm -rf outputs
 
 -include $(DEPS)

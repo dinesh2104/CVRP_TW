@@ -26,6 +26,7 @@ void tsp_approx(const VRP &vrp,
     weight_t ThisX = vrp.node[tour[i - 1]].x;
     weight_t ThisY = vrp.node[tour[i - 1]].y;
     CloseDist = DBL_MAX;
+    
     for (node_t j = ncities - 1;; j--) {
       weight_t ThisDist =
           (vrp.node[tour[j]].x - ThisX) * (vrp.node[tour[j]].x - ThisX);
@@ -47,8 +48,13 @@ void tsp_approx(const VRP &vrp,
 
     double newDistance = calculate_tour_distance_t(vrp, tour, ncities);
     if (newDistance < bestDistance && verify_tour_t(vrp, tour, ncities)) {
-      cout << "TSP Approx Improvement: " << bestDistance << " to " << newDistance
-           << endl;
+      
+      // THREAD SAFETY: Prevent console text from garbling
+      #pragma omp critical
+      {
+        cout << "TSP Approx Improvement: " << bestDistance << " to " << newDistance << endl;
+      }
+      
       bestDistance = newDistance;
     } else {
       temp = tour[i];
@@ -83,6 +89,48 @@ vector<vector<node_t>> postprocess_tsp_approx(
   }
   return modifiedRoutes;
 }
+
+vector<vector<node_t>> postprocess_tsp_approx_parallel(
+    const VRP &vrp, vector<vector<node_t>> &solRoutes) {
+  
+  int nroutes = solRoutes.size();
+  
+  // Pre-allocate vector size to prevent 'push_back' race conditions
+  vector<vector<node_t>> modifiedRoutes(nroutes);
+
+  // Allocate threads to process each route independently
+  // schedule(dynamic) is best if some routes are significantly longer than others
+  #pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < nroutes; ++i) {
+    int sz = solRoutes[i].size();
+    
+    // Thread-local memory allocations
+    vector<node_t> cities(sz + 1);
+    vector<node_t> tour(sz + 1);
+
+    for (int j = 0; j < sz; ++j) {
+      cities[j] = solRoutes[i][j];
+    }
+    cities[sz] = 0;
+
+    // Run the TSP approx locally for this thread's route
+    tsp_approx(vrp, cities, tour, sz + 1);
+
+    vector<node_t> curr_route;
+    curr_route.reserve(sz); // Minor optimization to avoid re-allocations
+    for (int kk = 1; kk < sz + 1; ++kk) {
+      curr_route.push_back(tour[kk]);
+    }
+    
+    // Safely assign the result to this specific thread's index
+    // std::move transfers ownership fast without deep copying the array
+    modifiedRoutes[i] = std::move(curr_route);
+  }
+  
+  return modifiedRoutes;
+}
+
+
 
 void tsp_2opt(const VRP &vrp,
               vector<node_t> &cities,
@@ -130,13 +178,19 @@ void tsp_2opt(const VRP &vrp,
 
         if (new_distance < best_distance &&
             verify_tour_t(vrp, tmp_tour_with_depot, ncities + 1)) {
-          cout << "2OPT Improvement: " << best_distance << " to " << new_distance
-               << endl;
+            
+          // --- THREAD SAFETY: Prevent console text from garbling ---
+          #pragma omp critical
+          {
+            cout << "2OPT Improvement: " << best_distance << " to " << new_distance
+                 << endl;
+          }
+          
           improve = 0;
           for (unsigned jj = 0; jj < ncities; ++jj) {
             cities[jj] = tour[jj];
           }
-          best_distance = new_distance;
+          best_distance = new_distance; // Ensure best_distance is updated!
         }
       }
     }
@@ -171,25 +225,71 @@ vector<vector<node_t>> postprocess_2OPT(
   return postprocessed_final_routes;
 }
 
+vector<vector<node_t>> postprocess_2OPT_parallel(
+    const VRP &vrp, vector<vector<node_t>> &final_routes) {
+    
+  int nroutes = final_routes.size();
+  
+  // --- THREAD SAFETY: Pre-allocate vector size ---
+  // This prevents race conditions from using push_back()
+  vector<vector<node_t>> postprocessed_final_routes(nroutes);
+
+  // Allocate threads to process each route independently.
+  // schedule(dynamic) is used because 2-Opt is O(N^2), so longer 
+  // routes will take significantly more time than shorter routes.
+  #pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < nroutes; ++i) { // OpenMP requires signed integers for loop counters
+    unsigned sz = final_routes[i].size();
+    
+    // Thread-local memory allocations
+    vector<node_t> cities(sz);
+    vector<node_t> tour(sz);
+
+    for (unsigned j = 0; j < sz; ++j) {
+      cities[j] = final_routes[i][j];
+    }
+
+    // Run the 2-Opt locally for this thread's route
+    if (sz > 2) {
+      tsp_2opt(vrp, cities, tour, sz);
+    }
+
+    vector<node_t> curr_route;
+    curr_route.reserve(sz); // Minor optimization to avoid re-allocations
+    for (unsigned kk = 0; kk < sz; ++kk) {
+      curr_route.push_back(cities[kk]);
+    }
+    
+    // Safely assign the result to this specific thread's index
+    // std::move transfers ownership quickly without copying the array
+    postprocessed_final_routes[i] = std::move(curr_route);
+  }
+  
+  return postprocessed_final_routes;
+}
+
+
+
+
 vector<vector<node_t>> postProcessIt(
     const VRP &vrp, vector<vector<node_t>> &final_routes, weight_t &minCost) {
   vector<vector<node_t>> postprocessed_final_routes;
 
-  auto postprocessed_final_routes1 = postprocess_tsp_approx(vrp, final_routes);
+  auto postprocessed_final_routes1 = postprocess_tsp_approx_parallel(vrp, final_routes);
   if (verify_route_t(vrp, postprocessed_final_routes1)) {
     cout << "\nPostprocess 1 route valid" << endl;
   } else {
     cout << "\nPostprocess 1 route invalid" << endl;
   }
 
-  auto postprocessed_final_routes2 = postprocess_2OPT(vrp, postprocessed_final_routes1);
+  auto postprocessed_final_routes2 = postprocess_2OPT_parallel(vrp, postprocessed_final_routes1);
   if (verify_route_t(vrp, postprocessed_final_routes2)) {
     cout << "Postprocess 2 route valid" << endl;
   } else {
     cout << "Postprocess 2 route invalid" << endl;
   }
 
-  auto postprocessed_final_routes3 = postprocess_2OPT(vrp, final_routes);
+  auto postprocessed_final_routes3 = postprocess_2OPT_parallel(vrp, final_routes);
   if (verify_route_t(vrp, postprocessed_final_routes3)) {
     cout << "Postprocess 3 route valid" << endl;
   } else {
@@ -232,3 +332,4 @@ vector<vector<node_t>> postProcessIt(
   minCost = postprocessed_final_routes_cost;
   return postprocessed_final_routes;
 }
+

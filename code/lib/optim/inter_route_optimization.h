@@ -10,4 +10,8 @@ void inter_route_swap(const VRP &vrp, std::vector<std::vector<node_t>> &routes);
 void inter_route_2opt_star(const VRP &vrp, std::vector<std::vector<node_t>> &routes);
 void updated_relocate(const VRP &vrp, std::vector<std::vector<node_t>> &routes);
 
+void inter_route_relocate_parallel(const VRP &vrp, std::vector<std::vector<node_t>> &routes);
+void inter_route_swap_parallel(const VRP &vrp, std::vector<std::vector<node_t>> &routes);
+void inter_route_2opt_star_parallel(const VRP &vrp, std::vector<std::vector<node_t>> &routes);
+
 #endif

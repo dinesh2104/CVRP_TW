@@ -251,9 +251,9 @@ vector<vector<int>> clustering_angle_sweep_parallel(const VRP &vrp,
             
             if (current_variance > best_variance) {
                 best_idx = i; // Switch to the more balanced trial
-                cout << "Tie-breaker: Trial " << i << " has better balance (variance: " 
-                     << current_variance << ") than trial " << best_idx 
-                     << " (variance: " << best_variance << ")" << endl;
+                // cout << "Tie-breaker: Trial " << i << " has better balance (variance: " 
+                //      << current_variance << ") than trial " << best_idx 
+                //      << " (variance: " << best_variance << ")" << endl;
             }
         }
     }
