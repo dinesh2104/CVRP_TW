@@ -35,7 +35,7 @@ test6:
 
 test7:
 	$(CXX) seq_CVRPTW_v7_clarkwithTW.cpp -o seq.out
-	./seq.out r102.txt
+	./seq.out r_50.txt
 	
 test8:
 	$(CXX) seq_CVRPTW_v8_clusterCwtw.cpp -o seq.out

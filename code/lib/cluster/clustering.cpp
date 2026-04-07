@@ -180,10 +180,8 @@ vector<vector<int>> clustering_angle_sweep_parallel(const VRP &vrp,
     int num_customers = static_cast<int>(sweep_list.size());
     vector<vector<vector<int>>> trials(num_trials);
 
-    // 2. Parallel trials
     #pragma omp parallel
     {
-        // Thread-safe random seeding
         mt19937 gen(omp_get_thread_num() + (unsigned int)time(NULL));
         uniform_int_distribution<> dist(0, num_customers - 1);
 
@@ -219,10 +217,6 @@ vector<vector<int>> clustering_angle_sweep_parallel(const VRP &vrp,
         }
     }
 
-    // 3. Selection: Return the trial with the fewest clusters
-    // --- PHASE 3: SELECTION (WITH TIE-BREAKER) ---
-    
-    // Helper lambda to calculate how "unbalanced" a trial is
     auto get_size_variance = [](const vector<vector<int>>& clusters) {
         if (clusters.empty()) return 0.0;
         
@@ -240,17 +234,15 @@ vector<vector<int>> clustering_angle_sweep_parallel(const VRP &vrp,
 
     int best_idx = 0;
     for (int i = 1; i < num_trials; i++) {
-        // 1. Primary Goal: Minimize the number of vehicles used
         if (trials[i].size() < trials[best_idx].size()) {
             best_idx = i;
         } 
-        // 2. Secondary Goal (Tie-Breaker): If vehicles are equal, balance the workload
         else if (trials[i].size() == trials[best_idx].size()) {
             double current_variance = get_size_variance(trials[i]);
             double best_variance = get_size_variance(trials[best_idx]);
             
             if (current_variance > best_variance) {
-                best_idx = i; // Switch to the more balanced trial
+                best_idx = i; 
                 // cout << "Tie-breaker: Trial " << i << " has better balance (variance: " 
                 //      << current_variance << ") than trial " << best_idx 
                 //      << " (variance: " << best_variance << ")" << endl;

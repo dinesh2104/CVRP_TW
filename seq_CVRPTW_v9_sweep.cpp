@@ -723,7 +723,7 @@ clarke_wright_cvrptw(const VRP &vrp,
             routes[best_j].clear();
             route_demand[best_j] = 0;
             // cout<<"Merged "<<from_<<" to "<<to_<<endl;
-            //save_routes_snapshot(routes, "snap/step_" + to_string(step++) + ".csv");
+            save_routes_snapshot(routes, "snap/step_" + to_string(step++) + ".csv");
 
         }
 
@@ -1478,7 +1478,7 @@ VRP vrp;
 
   inter_route_relocate(vrp,routes);
   weight_t post_relocate_cost=calculate_total_cost(vrp, routes);
-  //save_routes_snapshot(routes, "snap/step_1.csv");
+  save_routes_snapshot(routes, "snap/step_100.csv");
   //print_routes(routes);
   //cout<<"Total Distance after inter_route_relocate: "<<calculate_total_cost(vrp, routes)<<endl;
   
@@ -1486,7 +1486,7 @@ VRP vrp;
 
   inter_route_swap(vrp,routes);
   weight_t post_swap_cost=calculate_total_cost(vrp, routes);
-  //save_routes_snapshot(routes, "snap/step_2.csv");
+  save_routes_snapshot(routes, "snap/step_200.csv");
   //print_routes(routes);
 
   //cout<<"Total Distance after inter_route_swap: "<<calculate_total_cost(vrp, routes)<<endl;
@@ -1495,7 +1495,7 @@ VRP vrp;
 
   inter_route_2opt_star(vrp,routes);
   weight_t post_2opt_star_cost=calculate_total_cost(vrp, routes);
-  //save_routes_snapshot(routes, "snap/step_3.csv");
+  save_routes_snapshot(routes, "snap/step_300.csv");
   //print_routes(routes);
   //cout<<"Total Distance after inter_route_2opt_star: "<<calculate_total_cost(vrp, routes)<<endl;
 

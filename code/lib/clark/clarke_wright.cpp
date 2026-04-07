@@ -1,4 +1,5 @@
 #include "clarke_wright.h"
+#include "../route_utils.h"
 #include <omp.h>
 #include <algorithm>
 #include <vector>
@@ -169,6 +170,11 @@ vector<vector<node_t>> clarke_wright_cvrptw(
 }
 
 
+// Parrale version of clark-wright using OpenMP.
+//The main idea is to parallelize the innermost loop 
+// where we evaluate all pairs of routes for potential merging. 
+// Each thread will keep track of its own best merge candidate and update the global variable.
+
 vector<vector<node_t>> clarke_wright_cvrptw_parallel(
     const VRP &vrp, const vector<vector<int>> &clusters) {
   
@@ -177,20 +183,19 @@ vector<vector<node_t>> clarke_wright_cvrptw_parallel(
 
   vector<vector<node_t>> final_routes;
 
-  // Lambda to compute arrival time and check time windows.
-  // Thread-safe because it only reads from 'vrp'.
+  
   auto compute_arrival_time = [&](const vector<node_t> &route) {
     double time = 0.0;
-    node_t prev = 0; // Assuming 0 is the depot
+    node_t prev = 0; 
 
     for (node_t node : route) {
       time += vrp.get_dist(prev, node);
       
-      // Wait if we arrive before the early time
+      
       if (time < vrp.node[node].earlyTime) {
         time = vrp.node[node].earlyTime;
       }
-      // Invalid if we arrive after the latest time
+      
       if (time > vrp.node[node].latestTime) {
         return -1.0;
       }
@@ -206,35 +211,34 @@ vector<vector<node_t>> clarke_wright_cvrptw_parallel(
     return compute_arrival_time(route) >= 0;
   };
 
-  // OUTER LOOP: Iterate sequentially through each cluster
+ 
   for (const auto &cluster : clusters) {
     vector<vector<node_t>> routes;
     vector<double> route_demand;
 
-    // Initialize every node as its own single-stop route
+    
     for (auto node : cluster) {
       routes.push_back({node});
       route_demand.push_back(vrp.node[node].demand);
     }
 
-    // Merge loop: Continues until no more valid savings are found
+    
     while (true) {
       double global_best_saving = -1e18;
       int global_best_i = -1;
       int global_best_j = -1;
       vector<node_t> global_best_merge;
 
-      // --- OPENMP PARALLEL REGION BEGINS ---
-      // Spawns threads to search for the best merge simultaneously
+      
       #pragma omp parallel 
       {
-        // Thread-local tracking variables (prevents race conditions)
+        
         double local_best_saving = -1e18;
         int local_best_i = -1;
         int local_best_j = -1;
         vector<node_t> local_best_merge;
 
-        // Distribute the r_i loop dynamically across threads
+       
         #pragma omp for schedule(dynamic) nowait
         for (int r_i = 0; r_i < static_cast<int>(routes.size()); r_i++) {
           if (routes[r_i].empty()) continue;
@@ -242,7 +246,7 @@ vector<vector<node_t>> clarke_wright_cvrptw_parallel(
           for (int r_j = r_i + 1; r_j < static_cast<int>(routes.size()); r_j++) {
             if (routes[r_j].empty()) continue;
             
-            // Capacity constraint check
+            
             if (route_demand[r_i] + route_demand[r_j] > vrp.getCapacity()) {
               continue;
             }
@@ -316,10 +320,10 @@ vector<vector<node_t>> clarke_wright_cvrptw_parallel(
 
               double total_saving = alpha * dist_saving - beta * waiting;
               
-              // Time window verification
+              
               if (!verify_route(cand.merged)) continue;
 
-              // UPDATE LOCAL BEST (Thread-Safe)
+              
               if (total_saving > local_best_saving) {
                 local_best_saving = total_saving;
                 local_best_i = r_i;
@@ -331,8 +335,6 @@ vector<vector<node_t>> clarke_wright_cvrptw_parallel(
         }
 
         // --- GLOBAL SYNCHRONIZATION ---
-        // Once a thread finishes its loop chunk, it safely compares its best 
-        // against the global best inside a critical lock.
         #pragma omp critical
         {
           if (local_best_saving > global_best_saving) {
@@ -345,19 +347,19 @@ vector<vector<node_t>> clarke_wright_cvrptw_parallel(
       } 
       // --- OPENMP PARALLEL REGION ENDS ---
 
-      // If no thread found a valid saving, stop merging for this cluster
+      
       if (global_best_saving <= 0) {
         break;
       }
 
-      // Apply the absolute best merge found globally
+      
       routes[global_best_i] = std::move(global_best_merge);
       route_demand[global_best_i] += route_demand[global_best_j];
-      routes[global_best_j].clear(); // Empty the old route
+      routes[global_best_j].clear(); 
       route_demand[global_best_j] = 0;
     }
 
-    // Save finalized routes from this cluster to the master list
+    
     for (auto &route : routes) {
       if (!route.empty()) {
         final_routes.push_back(route);
@@ -368,14 +370,12 @@ vector<vector<node_t>> clarke_wright_cvrptw_parallel(
   return final_routes;
 }
 
-vector<vector<node_t>> clarke_wright_cvrptw_v2(
+vector<vector<node_t>> clarke_wright_cvrptw_parallel_v2(
     const VRP &vrp, const vector<vector<int>> &clusters) {
   
   double alpha = 0.7;
   double beta = 0.3;
 
-  // These lambdas only read from the const 'vrp' object, 
-  // so they are perfectly thread-safe to share across all threads.
   auto compute_arrival_time = [&](const vector<node_t> &route) {
     double time = 0.0;
     node_t prev = 0;
@@ -401,17 +401,12 @@ vector<vector<node_t>> clarke_wright_cvrptw_v2(
 
   int num_clusters = static_cast<int>(clusters.size());
   
-  // Create an array of vectors to hold the results of each cluster independently.
-  // This prevents race conditions when threads try to save their routes.
   vector<vector<vector<node_t>>> cluster_results(num_clusters);
 
-  // Parallelize the loop. schedule(dynamic) is crucial here because Clarke-Wright 
-  // runtime varies wildly depending on the number of nodes in a specific cluster.
   #pragma omp parallel for schedule(dynamic)
   for (int c = 0; c < num_clusters; ++c) {
     const auto &cluster = clusters[c];
     
-    // Variables declared inside the parallel loop are private to each thread
     vector<vector<node_t>> routes;
     vector<double> route_demand;
 
@@ -534,7 +529,6 @@ vector<vector<node_t>> clarke_wright_cvrptw_v2(
       route_demand[best_j] = 0;
     }
 
-    // Save the finalized routes for this specific cluster
     for (auto &route : routes) {
       if (!route.empty()) {
         cluster_results[c].push_back(route);
@@ -542,8 +536,132 @@ vector<vector<node_t>> clarke_wright_cvrptw_v2(
     }
   }
 
-  // Combine all the individual cluster results into the final output sequentially.
-  // We use std::move for performance so we don't unnecessarily copy the vectors.
+  vector<vector<node_t>> final_routes;
+  for (int c = 0; c < num_clusters; ++c) {
+    for (auto &route : cluster_results[c]) {
+      final_routes.push_back(std::move(route));
+    }
+  }
+
+  return final_routes;
+}
+
+vector<vector<node_t>> clarke_wright_cvrptw_distance(
+    const VRP &vrp, const std::vector<std::vector<int>> &clusters) {
+  const int num_clusters = static_cast<int>(clusters.size());
+  vector<vector<vector<node_t>>> cluster_results(num_clusters);
+
+#pragma omp parallel for schedule(dynamic)
+  for (int c = 0; c < num_clusters; ++c) {
+    const auto &cluster = clusters[c];
+    const size_t cluster_size = cluster.size();
+    struct DistanceSaving {
+      node_t i;
+      node_t j;
+      weight_t value;
+    };
+
+    vector<vector<node_t>> routes;
+    vector<demand_t> route_demand;
+    vector<int> node_to_route(vrp.getSize(), -1);
+    routes.reserve(cluster_size);
+    route_demand.reserve(cluster_size);
+
+    for (node_t node : cluster) {
+      routes.push_back({node});
+      route_demand.push_back(vrp.node[node].demand);
+      node_to_route[node] = static_cast<int>(routes.size()) - 1;
+    }
+
+    vector<DistanceSaving> savings;
+    savings.reserve(cluster_size * (cluster_size > 1 ? cluster_size - 1 : 0) / 2);
+
+    for (size_t i = 0; i < cluster_size; ++i) {
+      for (size_t j = i + 1; j < cluster_size; ++j) {
+        const node_t from = cluster[i];
+        const node_t to = cluster[j];
+        const weight_t saving =
+            vrp.get_dist(DEPOT, from) + vrp.get_dist(DEPOT, to) -
+            vrp.get_dist(from, to);
+        savings.push_back({from, to, saving});
+      }
+    }
+
+    sort(savings.begin(), savings.end(),
+         [](const DistanceSaving &a, const DistanceSaving &b) {
+           return a.value > b.value;
+         });
+
+    for (const auto &saving : savings) {
+      const node_t i = saving.i;
+      const node_t j = saving.j;
+
+      const int r_i = node_to_route[i];
+      const int r_j = node_to_route[j];
+      if (r_i < 0 || r_j < 0 || r_i == r_j) {
+        continue;
+      }
+
+      if (route_demand[r_i] + route_demand[r_j] > vrp.getCapacity()) {
+        continue;
+      }
+
+      auto route_i = routes[r_i];
+      auto route_j = routes[r_j];
+      if (route_i.empty() || route_j.empty()) {
+        continue;
+      }
+
+      const bool i_start = route_i.front() == i;
+      const bool i_end = route_i.back() == i;
+      const bool j_start = route_j.front() == j;
+      const bool j_end = route_j.back() == j;
+
+      if (!(i_start || i_end) || !(j_start || j_end)) {
+        continue;
+      }
+
+      vector<node_t> merged;
+      if (i_end && j_start) {
+        merged = route_i;
+        merged.insert(merged.end(), route_j.begin(), route_j.end());
+      } else if (i_start && j_end) {
+        merged = route_j;
+        merged.insert(merged.end(), route_i.begin(), route_i.end());
+      } else if (i_end && j_end) {
+        reverse(route_j.begin(), route_j.end());
+        merged = route_i;
+        merged.insert(merged.end(), route_j.begin(), route_j.end());
+      } else if (i_start && j_start) {
+        reverse(route_i.begin(), route_i.end());
+        merged = route_i;
+        merged.insert(merged.end(), route_j.begin(), route_j.end());
+      } else {
+        continue;
+      }
+
+      if (!verify_single_route(vrp, merged)) {
+        continue;
+      }
+
+      routes[r_i] = std::move(merged);
+      route_demand[r_i] += route_demand[r_j];
+
+      for (node_t node : routes[r_j]) {
+        node_to_route[node] = r_i;
+      }
+
+      routes[r_j].clear();
+      route_demand[r_j] = 0;
+    }
+
+    for (auto &route : routes) {
+      if (!route.empty()) {
+        cluster_results[c].push_back(std::move(route));
+      }
+    }
+  }
+
   vector<vector<node_t>> final_routes;
   for (int c = 0; c < num_clusters; ++c) {
     for (auto &route : cluster_results[c]) {

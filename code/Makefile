@@ -1,5 +1,5 @@
 CXX := g++
-CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic -MMD -MP -fopenmp
+CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic -MMD -MP -fopenmp -O3 -march=native
 LDFLAGS := -fopenmp
 TARGET := solve_cvrptw
 

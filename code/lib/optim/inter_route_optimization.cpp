@@ -1,5 +1,5 @@
 #include "inter_route_optimization.h"
-
+#include<iostream>
 #include <vector>
 #include <omp.h>
 #include "../route_utils.h"
@@ -76,8 +76,7 @@ void inter_route_relocate_parallel(const VRP &vrp, vector<vector<node_t>> &route
   while (improvement) {
     improvement = false;
 
-    // Global trackers for the absolute best move found in this iteration
-    double global_best_gain = 1e-6; // Threshold for improvement
+    double global_best_gain = 1e-6; 
     int best_r1 = -1;
     int best_r2 = -1;
     vector<node_t> best_routeA;
@@ -88,21 +87,17 @@ void inter_route_relocate_parallel(const VRP &vrp, vector<vector<node_t>> &route
     // --- PARALLEL SEARCH REGION ---
     #pragma omp parallel
     {
-      // Thread-local trackers to prevent data races
       double local_best_gain = 1e-6;
       int local_best_r1 = -1;
       int local_best_r2 = -1;
       vector<node_t> local_best_routeA;
       vector<node_t> local_best_routeB;
 
-      // Dynamically distribute the route-pairing workload across threads
-      // collapse(2) flattens the two outer loops into one large parallel workload
       #pragma omp for schedule(dynamic) collapse(2) nowait
       for (int r1 = 0; r1 < num_routes; r1++) {
         for (int r2 = 0; r2 < num_routes; r2++) {
           if (r1 == r2) continue;
 
-          // Read-only references (safe for parallel reading)
           const auto &routeA = routes[r1];
           const auto &routeB = routes[r2];
           
@@ -122,19 +117,15 @@ void inter_route_relocate_parallel(const VRP &vrp, vector<vector<node_t>> &route
               double cost_B = vrp.get_dist(x, u) + vrp.get_dist(u, y) - vrp.get_dist(x, y);
               double total_gain = savings_A - cost_B;
 
-              // Compare against the LOCAL best, not the global best
               if (total_gain > local_best_gain) {
                 
-                // Only create and modify vectors if the math shows it's a new best
                 vector<node_t> new_routeA = routeA;
                 vector<node_t> new_routeB = routeB;
 
                 new_routeA.erase(new_routeA.begin() + i);
                 new_routeB.insert(new_routeB.begin() + j, u);
 
-                // Verify time windows and capacity
                 if (verify_single_route(vrp, new_routeA) && verify_single_route(vrp, new_routeB)) {
-                  // Save the local best move
                   local_best_gain = total_gain;
                   local_best_r1 = r1;
                   local_best_r2 = r2;
@@ -147,7 +138,6 @@ void inter_route_relocate_parallel(const VRP &vrp, vector<vector<node_t>> &route
         }
       }
 
-      // Safely update the global best move inside a critical lock
       #pragma omp critical
       {
         if (local_best_gain > global_best_gain) {
@@ -160,15 +150,12 @@ void inter_route_relocate_parallel(const VRP &vrp, vector<vector<node_t>> &route
       }
     } // --- END OF PARALLEL REGION ---
 
-    // --- APPLY THE BEST MOVE SEQUENTIALLY ---
     if (global_best_gain > 1e-6) {
       routes[best_r1] = std::move(best_routeA);
       routes[best_r2] = std::move(best_routeB);
       improvement = true;
     }
 
-    // --- CLEANUP Trivial Routes ---
-    // Moved outside the loop logic so we only clean up at the end of an iteration
     for (auto it = routes.begin(); it != routes.end();) {
       if (it->size() <= 2) {
         it = routes.erase(it);
@@ -252,7 +239,6 @@ void inter_route_swap_parallel(const VRP &vrp, vector<vector<node_t>> &routes) {
   while (improvement) {
     improvement = false;
 
-    // Global trackers for the absolute best swap found in this iteration
     double global_best_gain = 1e-6; 
     int best_r1 = -1;
     int best_r2 = -1;
@@ -264,20 +250,16 @@ void inter_route_swap_parallel(const VRP &vrp, vector<vector<node_t>> &routes) {
     // --- PARALLEL SEARCH REGION ---
     #pragma omp parallel
     {
-      // Thread-local trackers to prevent data races
       double local_best_gain = 1e-6;
       int local_best_r1 = -1;
       int local_best_r2 = -1;
       vector<node_t> local_best_routeA;
       vector<node_t> local_best_routeB;
 
-      // schedule(dynamic) is excellent here because the inner loop (r2 = r1 + 1) 
-      // creates a "triangular" workload where earlier r1 iterations take longer.
       #pragma omp for schedule(dynamic) nowait
       for (int r1 = 0; r1 < num_routes; r1++) {
         for (int r2 = r1 + 1; r2 < num_routes; r2++) {
           
-          // Read-only references
           const auto &routeA = routes[r1];
           const auto &routeB = routes[r2];
 
@@ -285,7 +267,6 @@ void inter_route_swap_parallel(const VRP &vrp, vector<vector<node_t>> &routes) {
             continue;
           }
 
-          // PERFORMANCE FIX: Calculate base route loads ONCE per pair
           double base_load_A = vrp.get_route_load(routeA);
           double base_load_B = vrp.get_route_load(routeB);
 
@@ -306,27 +287,18 @@ void inter_route_swap_parallel(const VRP &vrp, vector<vector<node_t>> &routes) {
               
               double total_gain = cost_before - cost_after;
 
-              // Compare against LOCAL best gain
               if (total_gain > local_best_gain) {
-                
-                // Capacity Check using pre-calculated base loads
                 double new_load_A = base_load_A - vrp.node[u].demand + vrp.node[v].demand;
                 double new_load_B = base_load_B - vrp.node[v].demand + vrp.node[u].demand;
 
                 if (new_load_A <= vrp.getCapacity() && new_load_B <= vrp.getCapacity()) {
-                  
-                  // Create candidate routes
                   vector<node_t> new_routeA = routeA;
                   vector<node_t> new_routeB = routeB;
 
                   new_routeA[i] = v;
                   new_routeB[j] = u;
-
-                  // Time window check
                   if (verify_single_route(vrp, new_routeA) &&
                       verify_single_route(vrp, new_routeB)) {
-                    
-                    // Update thread-local best
                     local_best_gain = total_gain;
                     local_best_r1 = r1;
                     local_best_r2 = r2;
@@ -340,7 +312,6 @@ void inter_route_swap_parallel(const VRP &vrp, vector<vector<node_t>> &routes) {
         }
       }
 
-      // Safely update the global best move inside a critical lock
       #pragma omp critical
       {
         if (local_best_gain > global_best_gain) {
@@ -352,8 +323,6 @@ void inter_route_swap_parallel(const VRP &vrp, vector<vector<node_t>> &routes) {
         }
       }
     } // --- END OF PARALLEL REGION ---
-
-    // --- APPLY THE BEST MOVE SEQUENTIALLY ---
     if (global_best_gain > 1e-6) {
       routes[best_r1] = std::move(best_routeA);
       routes[best_r2] = std::move(best_routeB);
@@ -411,8 +380,26 @@ void inter_route_2opt_star(const VRP &vrp, vector<vector<node_t>> &routes) {
                   new_load_B <= vrp.getCapacity()) {
                 if (verify_single_route(vrp, new_routeA) &&
                     verify_single_route(vrp, new_routeB)) {
+                  cout<<"Before 2-opt* between routes r1 and r2 "<< endl;
+                  for(auto node : routeA){
+                    cout<<node<<" ";
+                  }
+                  cout<<endl;
+                  for(auto node : routeB){
+                    cout<<node<<" ";
+                  }
+                  cout<<endl;
                   routeA = new_routeA;
                   routeB = new_routeB;
+                  cout<<"After 2-opt* between routes r1 and r2 "<< endl;
+                  for(auto node : routeA){
+                    cout<<node<<" ";
+                  }
+                  cout<<endl;
+                  for(auto node : routeB){
+                    cout<<node<<" ";
+                  }
+                  cout<<endl;
                   improvement = true;
                   goto end_of_search;
                 }
@@ -439,7 +426,6 @@ void inter_route_2opt_star_parallel(const VRP &vrp, vector<vector<node_t>> &rout
   while (improvement) {
     improvement = false;
 
-    // Global trackers for the absolute best move found in this iteration
     double global_best_gain = 1e-6;
     int best_r1 = -1;
     int best_r2 = -1;
@@ -451,14 +437,12 @@ void inter_route_2opt_star_parallel(const VRP &vrp, vector<vector<node_t>> &rout
     // --- PARALLEL SEARCH REGION ---
     #pragma omp parallel
     {
-      // Thread-local trackers to prevent data races
       double local_best_gain = 1e-6;
       int local_best_r1 = -1;
       int local_best_r2 = -1;
       vector<node_t> local_best_routeA;
       vector<node_t> local_best_routeB;
 
-      // schedule(dynamic) perfectly balances the triangular workload (r2 = r1 + 1)
       #pragma omp for schedule(dynamic) nowait
       for (int r1 = 0; r1 < num_routes; r1++) {
         for (int r2 = r1 + 1; r2 < num_routes; r2++) {
@@ -470,7 +454,6 @@ void inter_route_2opt_star_parallel(const VRP &vrp, vector<vector<node_t>> &rout
             continue;
           }
 
-          // 2-Opt* swaps the "tails" of two different routes
           for (size_t i = 0; i < routeA.size() - 1; i++) {
             node_t t = routeA[i];
             node_t u = routeA[i + 1];
@@ -483,7 +466,6 @@ void inter_route_2opt_star_parallel(const VRP &vrp, vector<vector<node_t>> &rout
               double cost_after = vrp.get_dist(t, v) + vrp.get_dist(x, u);
               double total_gain = cost_before - cost_after;
 
-              // PERFORMANCE FIX: Only build new routes if it beats the LOCAL best
               if (total_gain > local_best_gain) {
                 
                 vector<node_t> new_routeA;
@@ -503,11 +485,9 @@ void inter_route_2opt_star_parallel(const VRP &vrp, vector<vector<node_t>> &rout
                 double new_load_A = vrp.get_route_load(new_routeA);
                 double new_load_B = vrp.get_route_load(new_routeB);
 
-                // Verify constraints
                 if (new_load_A <= vrp.getCapacity() && new_load_B <= vrp.getCapacity()) {
                   if (verify_single_route(vrp, new_routeA) && verify_single_route(vrp, new_routeB)) {
                     
-                    // Update thread-local best
                     local_best_gain = total_gain;
                     local_best_r1 = r1;
                     local_best_r2 = r2;
@@ -521,7 +501,6 @@ void inter_route_2opt_star_parallel(const VRP &vrp, vector<vector<node_t>> &rout
         }
       }
 
-      // Safely update the global best move inside a critical lock
       #pragma omp critical
       {
         if (local_best_gain > global_best_gain) {
@@ -534,14 +513,12 @@ void inter_route_2opt_star_parallel(const VRP &vrp, vector<vector<node_t>> &rout
       }
     } // --- END OF PARALLEL REGION ---
 
-    // --- APPLY THE BEST MOVE SEQUENTIALLY ---
     if (global_best_gain > 1e-6) {
       routes[best_r1] = std::move(best_routeA);
       routes[best_r2] = std::move(best_routeB);
       improvement = true;
     }
 
-    // --- CLEANUP ---
     for (auto it = routes.begin(); it != routes.end();) {
       if (it->size() <= 2) {
         it = routes.erase(it);

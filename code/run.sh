@@ -3,7 +3,7 @@ mkdir -p outputs
 make
 
 result_file="outputs/result.csv"
-angle=90
+angle=30
 
 for infile in testcase/*; do
     filename=$(basename "$infile")
