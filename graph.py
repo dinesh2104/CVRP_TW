@@ -155,25 +155,23 @@ def solve_cvrptw_from_file(filename: str):
     num_vehicles, capacity, depot, df = read_solomon_file(filename)
 
     # Example routes
-    routes = [
-    [0, 47, 48, 43, 0],
-    [0, 9, 28, 24, 38, 50, 0],
-    [0, 49, 29, 10, 4, 0],
-    [0, 40, 39, 7, 32, 31, 34, 0],
-    [0, 17, 19, 12, 20, 0],
-    [0, 33, 21, 18, 35, 15, 0],
-    [0, 23, 30, 11, 0],
-    [0, 25, 14, 42, 36, 3, 16, 0],
-    [0, 1, 41, 44, 6, 22, 2, 0],
-    [0, 5, 0],
-    [0, 26, 46, 45, 13, 0],
-    [0, 27, 37, 8, 0]
+    routes = [[0, 40, 39, 7, 32, 31, 34, 0],
+              [0, 17, 19, 12, 20, 0],
+              [0, 47, 0],
+              [0, 27, 26, 46, 45, 13, 0],
+              [0, 9, 28, 24, 38, 50, 0],
+              [0, 25, 14, 42, 36, 3, 16, 0],
+              [0, 11, 4, 0],
+              [0, 49, 29, 10, 37, 8, 0],
+              [0, 23, 30, 5, 0],
+              [0, 33, 21, 18, 48, 2, 35, 15, 0],
+              [0, 1, 41, 44, 6, 22, 43, 0]
 ]
     verify_routes(df, routes, capacity)
 
-    #plot_routes(df, routes)
+    plot_routes(df, routes)
 
 
 # Example usage
-filename = "c100.txt"
+filename = "r_50.txt"
 solve_cvrptw_from_file(filename)
