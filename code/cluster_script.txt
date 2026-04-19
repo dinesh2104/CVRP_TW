@@ -1,0 +1,162 @@
+ssh -X  cs24m017@paramshakti.iitm.ac.in -p 4422
+
+Job script:
+
+copy:
+	scp -r -P 4422 ./Flanders* cs24m017@paramshakti.iitm.ac.in:/home/cs24m017/cuopt/test
+
+cmd:
+	$ module load spack
+	$ . /home/apps/spack/share/spack/setup-env.sh
+
+	$ spack find --loaded
+
+Job submit cmd:
+	$ sbatch <script>
+	$ squeue -u $USER 
+	$ squeue --me
+	$ squeue
+
+	$ scontrol show job <jobid> ===> detailed information about nodes, partitions, jobs, job steps, and configuration.
+
+	Use the scontrol command to hold the job.
+	$ scontrol hold <jobid>
+
+	$ scontrol release <jobid>
+
+	$ scontrol show partition <partition name> Ex - scontrol show partition gpu
+
+	$ scancel <jobid>
+
+cuda:
+	Setting up of environment:
+	source /home/apps/spack/share/spack/setup-env.sh #spack source
+	spack load gcc/wnu2dj5
+	#load gcc
+	spack load cuda/ezhcbzk
+	#load cuda
+	Example (1)
+	Compilation: nvcc -arch=sm_80<<prog_name.cu>>
+	Execution: ./a.out
+	Note: The optimization switch -arch=sm_80 is intended for Ampere series
+	A100 GPUs and is valid for CUDA 12 and later. Similarly, older versions of
+	CUDA have compatibility with lower versions of GCC only. Accordingly,
+	appropriate modules of GCC must be loaded.
+	Example (2)
+	Compilation: nvcc -arch=sm_80 /home/apps/Docs/samples/mm_blas.cu -lcublas
+	Execution: ./a.out
+
+
+script:
+
+#!/bin/bash
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH --gres=gpu:1
+#SBATCH --partition=gpu
+#SBATCH --time=00:10:00
+#SBATCH --job-name=cuda_test
+#SBATCH --error=job.%J.err
+#SBATCH --output=job.%J.out
+
+
+source /home/apps/spack/share/spack/setup-env.sh
+spack load gcc/wnu2dj5
+spack load cuda/ehfhx47
+
+cd $SLURM_SUBMIT_DIR
+
+./a.out
+
+
+cuopt_test:
+
+#!/bin/bash
+#SBATCH -N 1                        # 1 node
+#SBATCH --ntasks-per-node=1         # 1 task
+#SBATCH --gres=gpu:1                # request 1 GPU
+#SBATCH --cpus-per-task=4           # number of CPU cores
+#SBATCH --partition=gpu             # GPU partition
+#SBATCH --time=01:00:00             # walltime
+#SBATCH --job-name=cuopt_ctest
+#SBATCH --output=job.%J.out
+#SBATCH --error=job.%J.err
+
+# Move to job submission directory
+cd $SLURM_SUBMIT_DIR
+
+# Set CUOPT_HOME as current directory
+export CUOPT_HOME=$SLURM_SUBMIT_DIR
+
+# Load miniconda module and activate cuopt_dev env
+module load miniconda
+
+source ~/.bashrc
+
+conda activate cuopt_dev
+
+# Run CTest
+ctest --test-dir ${CUOPT_HOME}/cpp/build --output-on-failure
+
+
+
+-------------------------------
+OPENMP:
+
+#!/bin/bash
+#SBATCH -N 1                        # 1 node
+#SBATCH --ntasks-per-node=1         # 1 task
+#SBATCH --cpus-per-task=20          # Request 20 CPU cores for parallel execution
+#SBATCH --partition=standard        # Standard CPU partition
+#SBATCH --time=00:30:00             # Walltime (30 mins)
+#SBATCH --job-name=openmp_test
+#SBATCH --output=job.%J.out
+#SBATCH --error=job.%J.err
+
+# Load the same GCC version you used for CUDA/cuOpt to ensure consistency
+source /home/apps/spack/share/spack/setup-env.sh
+spack load gcc/wnu2dj5
+
+# Move to job submission directory
+cd $SLURM_SUBMIT_DIR
+
+# Set the number of threads for OpenMP based on the SBATCH allocation
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+# Optional: Improve performance by binding threads to cores
+export OMP_PROC_BIND=true
+
+# Make sure your test script has execute permissions
+chmod +x test.sh
+
+# Run the test script with the -p flag as requested
+./test.sh -p
+
+----------------------------------
+
+#!/bin/bash
+#SBATCH -N 1                        # 1 node
+#SBATCH --ntasks-per-node=1         # 1 task
+#SBATCH --cpus-per-task=1           # Request only 1 CPU core
+#SBATCH --partition=standard        # Standard CPU partition
+#SBATCH --time=00:30:00             # Walltime (30 mins)
+#SBATCH --job-name=seq_test
+#SBATCH --output=job.%J.out
+#SBATCH --error=job.%J.err
+
+# Load GCC compiler
+source /home/apps/spack/share/spack/setup-env.sh
+spack load gcc/wnu2dj5
+
+# Move to job submission directory
+cd $SLURM_SUBMIT_DIR
+
+# Ensure OMP_NUM_THREADS is set to 1 just in case the code has 
+# pragmas that would otherwise try to use more cores
+export OMP_NUM_THREADS=1
+
+# Make sure your test script has execute permissions
+chmod +x test.sh
+
+# Run the test script sequentially (without the -p flag)
+./test.sh
